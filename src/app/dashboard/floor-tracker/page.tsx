@@ -52,7 +52,7 @@ import {
   MachineStatus,
   FactoryDepartment,
 } from '@/types/cmms';
-import { subscribeMachines, createMachine, resetToSeedData } from '@/lib/services/cmmsService';
+import { subscribeMachines, createMachine } from '@/lib/services/cmmsService';
 import { ScanModal } from '@/components/scan/ScanModal';
 import { AssetModal } from '@/components/asset/AssetModal';
 import { useToast } from '@/context/ToastContext';
@@ -397,19 +397,6 @@ export default function FloorTrackerPage() {
       }
     }
   }, [machines, hasCheckedUrlParams]);
-
-  // Sync / Reset to full dataset
-  const handleSyncAllAssets = async () => {
-    setIsSyncing(true);
-    try {
-      await resetToSeedData();
-      showToast('Synchronized all 45+ factory plant assets across all departments!', 'success');
-    } catch (err) {
-      showToast('Error syncing factory asset database', 'error');
-    } finally {
-      setIsSyncing(false);
-    }
-  };
 
   // KPIs
   const totalAssets = machines.length;
@@ -859,17 +846,6 @@ export default function FloorTrackerPage() {
               <span>Workstations</span>
             </button>
           </div>
-
-          <button
-            type="button"
-            onClick={handleSyncAllAssets}
-            disabled={isSyncing}
-            className="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition flex items-center gap-2 cursor-pointer shadow-xs active:scale-95"
-            title="Synchronize and refresh all factory assets from cloud database"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isSyncing ? 'animate-spin' : ''}`} />
-            <span>{isSyncing ? 'Syncing...' : 'Sync Fleet'}</span>
-          </button>
 
           <button
             type="button"

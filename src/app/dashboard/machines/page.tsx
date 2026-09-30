@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   PlusCircle,
-  Wand2,
   Wrench,
   Tag,
   Printer,
@@ -33,79 +32,6 @@ import {
   AssetSubtypeDef,
 } from '@/lib/machineCatalog';
 
-const SAMPLE_ASSETS = [
-  {
-    category: 'MACHINE' as AssetCategory,
-    idPrefix: 'MC-OVK-4TH-',
-    brand: 'Yamato',
-    type: 'OVERLOCK_4_THREAD' as MachineType,
-    model: 'AZ-8000G / 4-Thread High-Speed',
-    date: '2023-04-12',
-    cost: 98000,
-    motor: 'SERVO' as MotorType,
-    line: 'Line 01' as FloorLine,
-    station: 'Station 04',
-    specs: '4-thread safety stitch, differential feed ratio 1:0.7–1:2, max 7,500 RPM, auto-lubrication',
-    label: 'Yamato 4-Thread Overlock Machine',
-  },
-  {
-    category: 'FURNITURE' as AssetCategory,
-    idPrefix: 'TBL-CUT-',
-    brand: 'Eastman',
-    type: 'TABLE_CUTTING' as MachineType,
-    model: 'MasterSpread Air-Float 12ft x 6ft',
-    date: '2023-02-18',
-    cost: 65000,
-    motor: 'SERVO' as MotorType,
-    line: 'Cutting Department' as FloorLine,
-    station: 'Spreading Table Bay 01',
-    specs: '12ft x 6ft laminated micro-perforated table with air-cushion blower and steel side guide rails',
-    label: 'Eastman Air-Float Fabric Spreading Table',
-  },
-  {
-    category: 'FURNITURE' as AssetCategory,
-    idPrefix: 'CHR-OPR-',
-    brand: 'Featherlite',
-    type: 'CHAIR_OPERATOR' as MachineType,
-    model: 'Optima-Sewing Swivel 360',
-    date: '2023-08-10',
-    cost: 4500,
-    motor: 'SERVO' as MotorType,
-    line: 'Line 02' as FloorLine,
-    station: 'Station 07',
-    specs: 'Pneumatic height adjustment, heavy-duty polyurethane seat, 360° swivel with lumbar support',
-    label: 'Featherlite Ergonomic Operator Swivel Chair',
-  },
-  {
-    category: 'UTILITY' as AssetCategory,
-    idPrefix: 'UTL-HBY-',
-    brand: 'Philips',
-    type: 'LIGHT_HIGHBAY' as MachineType,
-    model: 'CoreLine HighBay 120W',
-    date: '2023-05-22',
-    cost: 7500,
-    motor: 'SERVO' as MotorType,
-    line: 'Central Utilities & Plant' as FloorLine,
-    station: 'Ceiling Grid Bay C',
-    specs: '120W, 16,000 Lumen, 6500K Day White, IP65 dust and textile fiber resistant',
-    label: 'Philips 120W High-Bay Overhead LED Fixture',
-  },
-  {
-    category: 'VEHICLE' as AssetCategory,
-    idPrefix: 'VHC-FLT-',
-    brand: 'Godrej',
-    type: 'VEHICLE_FORKLIFT' as MachineType,
-    model: 'GX-20',
-    date: '2023-01-10',
-    cost: 1500000,
-    motor: 'SERVO' as MotorType,
-    line: 'Warehouse & Storage' as FloorLine,
-    station: 'Loading Dock A',
-    specs: '2 Ton capacity, Diesel/Electric, 3-stage mast',
-    label: 'Godrej GX-20 Heavy Duty Forklift',
-  },
-];
-
 export default function MachinesPage() {
   const { showToast } = useToast();
   const [machines, setMachines] = useState<Machine[]>([]);
@@ -130,9 +56,6 @@ export default function MachinesPage() {
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [printModalMachine, setPrintModalMachine] = useState<Machine | null>(null);
   const [printModalMode, setPrintModalMode] = useState<'TAG' | 'DOCUMENT' | 'BATCH'>('TAG');
-
-  // Sample index for autofill cycling
-  const [sampleIdx, setSampleIdx] = useState(0);
 
   // Custom brand & custom subtype state
   const [customBrands, setCustomBrands] = useState<string[]>([]);
@@ -272,28 +195,6 @@ export default function MachinesPage() {
       const rnd = Math.floor(100 + Math.random() * 900);
       setMId(`${meta.idPrefix}${rnd}`);
     }
-  };
-
-  // Handler for autofill sample
-  const handleAutofill = () => {
-    const s = SAMPLE_ASSETS[sampleIdx % SAMPLE_ASSETS.length];
-    setSampleIdx((prev) => prev + 1);
-
-    const rnd = Math.floor(100 + Math.random() * 900);
-    setIsCustomType(false);
-    setIsCustomBrand(false);
-    setSelectedCategory(s.category);
-    setMId(`${s.idPrefix}${rnd}`);
-    setMBrand(s.brand);
-    setMType(s.type);
-    setMModel(s.model);
-    setMDate(s.date);
-    setMCost(s.cost);
-    setMMotor(s.motor);
-    setMLine(s.line);
-    setMStation(s.station);
-
-    showToast(`Loaded sample: ${s.label} into form.`, 'info');
   };
 
   // Handler for form submit & registration
@@ -526,17 +427,8 @@ export default function MachinesPage() {
             <span>Plant Asset Registry &amp; Instant QR Generation</span>
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Register every factory asset &mdash; sewing machinery, cutting tables, operator seating, high-bay lighting &amp; utilities &mdash; and generate printable QR stickers.
+            Register factory assets &mdash; sewing machinery, cutting tables, seating, lighting &amp; utilities &mdash; and generate QR stickers.
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleAutofill}
-            className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 border border-indigo-200 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-xs cursor-pointer"
-          >
-            <Wand2 className="w-3.5 h-3.5" />
-            <span>Autofill Sample Asset</span>
-          </button>
         </div>
       </div>
 

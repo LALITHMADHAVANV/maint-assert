@@ -16,15 +16,18 @@ import {
   Tag,
   ShieldCheck,
   Loader2,
+  History,
 } from 'lucide-react';
 import { Machine, FloorLine, RepairUrgency } from '@/types/cmms';
 import {
   subscribeMachines,
   createBreakdownTicket,
   relocateMachine,
+  subscribeRepairs,
 } from '@/lib/services/cmmsService';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
+import { AssetHistoryModal } from '@/components/scan/AssetHistoryModal';
 
 function MobileScanContent() {
   const params = useParams();
@@ -38,6 +41,8 @@ function MobileScanContent() {
   const [machine, setMachine] = useState<Machine | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'report' | 'relocate'>('report');
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [assetHistoryCount, setAssetHistoryCount] = useState<number>(0);
 
   // Breakdown Form
   const [faultType, setFaultType] = useState('Skipping Stitches / Looper Timing Misalignment');
@@ -84,7 +89,18 @@ function MobileScanContent() {
       }
       setIsLoading(false);
     });
-    return () => unsub();
+
+    const unsubRepairs = subscribeRepairs((repairs) => {
+      const matching = repairs.filter(
+        (r) => r.machineId?.toLowerCase() === machineId.toLowerCase()
+      );
+      setAssetHistoryCount(matching.length);
+    });
+
+    return () => {
+      unsub();
+      unsubRepairs();
+    };
   }, [machineId, searchParams]);
 
   const handleBreakdownSubmit = async (e: React.FormEvent) => {
@@ -187,8 +203,8 @@ function MobileScanContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col p-4 sm:p-6 antialiased selection:bg-indigo-500 selection:text-white">
-      {/* Mobile Top Header */}
-      <div className="max-w-lg w-full mx-auto flex items-center justify-between py-3 border-b border-slate-200 mb-4">
+      {/* Mobile Top Header with Prominent History Button */}
+      <div className="max-w-lg w-full mx-auto flex items-center justify-between py-3 border-b border-slate-200 mb-4 gap-2">
         <Link
           href={role === 'CEO' ? '/dashboard/messages' : '/dashboard/machines'}
           className="text-xs text-slate-600 hover:text-slate-900 flex items-center gap-1.5 transition font-semibold"
@@ -196,9 +212,28 @@ function MobileScanContent() {
           <ArrowLeft className="w-4 h-4 text-slate-500" />
           <span>{role === 'CEO' ? 'CEO Approvals' : 'CMMS Dashboard'}</span>
         </Link>
+
+        {/* Top Actions: History Button + Live Status */}
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-          <span className="text-[11px] font-bold text-slate-700">Floor Terminal Live</span>
+          <button
+            type="button"
+            onClick={() => setIsHistoryModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer"
+            title="Inspect full asset maintenance and relocation history"
+          >
+            <History className="w-3.5 h-3.5" />
+            <span>Asset History</span>
+            {assetHistoryCount > 0 && (
+              <span className="px-1.5 py-0.2 text-[10px] bg-white/20 rounded-full font-mono">
+                {assetHistoryCount}
+              </span>
+            )}
+          </button>
+
+          <div className="hidden sm:flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2 py-1 rounded-lg border border-emerald-200 text-[11px] font-bold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            <span>Live Floor Terminal</span>
+          </div>
         </div>
       </div>
 
@@ -218,17 +253,27 @@ function MobileScanContent() {
                 {machine.brand} • {machine.model}
               </p>
             </div>
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                isDown
-                  ? 'bg-rose-50 text-rose-700 border border-rose-200 urgent-pulse'
-                  : machine.status === 'BUFFER'
-                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                  : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-              }`}
-            >
-              {machine.status}
-            </span>
+            <div className="flex flex-col items-end gap-1.5">
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                  isDown
+                    ? 'bg-rose-50 text-rose-700 border border-rose-200 urgent-pulse'
+                    : machine.status === 'BUFFER'
+                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                }`}
+              >
+                {machine.status}
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsHistoryModalOpen(true)}
+                className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <History className="w-3 h-3" />
+                <span>View Timeline ({assetHistoryCount})</span>
+              </button>
+            </div>
           </div>
 
           {/* Machine specs strip */}
@@ -509,6 +554,13 @@ function MobileScanContent() {
           )}
         </div>
       </div>
+
+      {/* Asset Maintenance & Relocation History Modal */}
+      <AssetHistoryModal
+        machine={machine}
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+      />
     </div>
   );
 }

@@ -12,7 +12,6 @@ import {
   Layers,
   LogOut,
   Camera,
-  RefreshCw,
   Crown,
   Package,
   Users,
@@ -20,12 +19,10 @@ import {
 } from 'lucide-react';
 import { LiveClock } from './LiveClock';
 import { useAuth } from '@/context/AuthContext';
-import { useToast } from '@/context/ToastContext';
 import {
   subscribeParts,
   subscribeRepairs,
   subscribeRequisitions,
-  resetToSeedData,
 } from '@/lib/services/cmmsService';
 import { ScanModal } from '@/components/scan/ScanModal';
 import { CameraScannerModal } from '@/components/scan/CameraScannerModal';
@@ -34,7 +31,6 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, role, logout } = useAuth();
-  const { showToast } = useToast();
 
   const [lowStockCount, setLowStockCount] = useState<number>(0);
   const [pendingTicketsCount, setPendingTicketsCount] = useState<number>(0);
@@ -43,7 +39,6 @@ export function Navbar() {
 
   const [isScanModalOpen, setIsScanModalOpen] = useState<boolean>(false);
   const [isCameraModalOpen, setIsCameraModalOpen] = useState<boolean>(false);
-  const [isSeeding, setIsSeeding] = useState<boolean>(false);
 
   useEffect(() => {
     const unsubParts = subscribeParts((parts) => {
@@ -76,19 +71,6 @@ export function Navbar() {
       unsubReqs();
     };
   }, []);
-
-  const handleResetSeed = async () => {
-    setIsSeeding(true);
-    try {
-      await resetToSeedData();
-      showToast('Factory database reset to realistic apparel seed dataset across all collections!', 'success');
-    } catch (e) {
-      showToast('Error resetting seed data', 'error');
-      console.error(e);
-    } finally {
-      setIsSeeding(false);
-    }
-  };
 
   interface NavTab {
     label: string;
@@ -278,17 +260,6 @@ export function Navbar() {
 
             {/* Right side tools */}
             <div className="flex items-center space-x-2 sm:space-x-3">
-              {/* Database / Live Sync Indicator */}
-              <div
-                onClick={handleResetSeed}
-                title="Click to reset or re-seed factory sample dataset"
-                className="hidden xl:flex items-center space-x-1.5 text-[11px] bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200 cursor-pointer text-slate-700 transition"
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="font-semibold text-emerald-700">Supabase Live</span>
-                <RefreshCw className={`w-3 h-3 text-slate-400 ml-1 ${isSeeding ? 'animate-spin' : ''}`} />
-              </div>
-
               {/* Live Floor Clock */}
               <LiveClock />
 

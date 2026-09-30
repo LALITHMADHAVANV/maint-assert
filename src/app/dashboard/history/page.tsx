@@ -23,6 +23,8 @@ import {
   subscribePPMSchedules,
   completePPMTask,
 } from '@/lib/services/cmmsService';
+import { FACTORY_MECHANICS_ROSTER, MechanicDuty } from '@/lib/constants/mechanics';
+import { MechanicCustodyModal } from '@/components/mechanic/MechanicCustodyModal';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 
@@ -34,6 +36,21 @@ export default function HistoryPage() {
   const [repairs, setRepairs] = useState<RepairTicket[]>([]);
   const [ppmSchedules, setPpmSchedules] = useState<PPMSchedule[]>([]);
   const [selectedMachineId, setSelectedMachineId] = useState<string>('');
+
+  const [selectedMechanic, setSelectedMechanic] = useState<MechanicDuty | null>(null);
+  const [isMechCustodyOpen, setIsMechCustodyOpen] = useState(false);
+
+  const handleOpenMechanicCustody = (mechIdentifier: string) => {
+    const cleanName = (mechIdentifier || '').toLowerCase();
+    const found = FACTORY_MECHANICS_ROSTER.find(
+      (m) =>
+        m.name.toLowerCase().includes(cleanName) ||
+        cleanName.includes(m.name.toLowerCase()) ||
+        m.id.toLowerCase() === cleanName
+    );
+    setSelectedMechanic(found || FACTORY_MECHANICS_ROSTER[0]);
+    setIsMechCustodyOpen(true);
+  };
 
   useEffect(() => {
     const unsubM = subscribeMachines((data) => {
@@ -256,10 +273,16 @@ export default function HistoryPage() {
                       )}
 
                       <div className="pt-2 border-t border-slate-200/60 flex flex-wrap items-center justify-between text-[10px] text-slate-500 gap-2">
-                        <span className="flex items-center gap-1 font-medium">
-                          <User className="w-3 h-3 text-slate-400" />
+                        <button
+                          type="button"
+                          onClick={() => handleOpenMechanicCustody(item.attendedBy || item.reportedBy)}
+                          className="flex items-center gap-1 font-semibold text-indigo-700 hover:text-indigo-900 bg-indigo-50/70 hover:bg-indigo-100 px-2 py-0.5 rounded border border-indigo-200 transition cursor-pointer"
+                          title="Click to view tools & spares handled by this mechanic"
+                        >
+                          <Wrench className="w-3 h-3 text-indigo-600" />
                           <span>{item.attendedBy || item.reportedBy}</span>
-                        </span>
+                          <span className="text-[9px] text-indigo-400 font-normal">➜ Tools</span>
+                        </button>
 
                         <span className="flex items-center gap-1 font-medium">
                           <Package className="w-3 h-3 text-slate-400" />
@@ -347,6 +370,13 @@ export default function HistoryPage() {
           </div>
         </div>
       </div>
+
+      {/* Mechanic Handled Tools & Crib Custody Modal */}
+      <MechanicCustodyModal
+        mechanic={selectedMechanic}
+        isOpen={isMechCustodyOpen}
+        onClose={() => setIsMechCustodyOpen(false)}
+      />
     </div>
   );
 }

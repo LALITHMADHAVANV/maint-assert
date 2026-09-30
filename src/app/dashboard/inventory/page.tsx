@@ -32,6 +32,8 @@ import {
   Layers,
   Lock,
   ChevronDown,
+  Wrench,
+  Gauge,
 } from 'lucide-react';
 import {
   SparePart,
@@ -49,6 +51,8 @@ import {
   approveRequisition,
   rejectRequisition,
 } from '@/lib/services/cmmsService';
+import { FACTORY_MECHANICS_ROSTER, MechanicDuty } from '@/lib/constants/mechanics';
+import { MechanicCustodyModal } from '@/components/mechanic/MechanicCustodyModal';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 
@@ -65,6 +69,27 @@ export default function InventoryPage() {
 
   const [parts, setParts] = useState<SparePart[]>([]);
   const [requisitions, setRequisitions] = useState<PartRequisition[]>([]);
+
+  // Mechanic Custody details modal state
+  const [selectedMechanic, setSelectedMechanic] = useState<MechanicDuty | null>(null);
+  const [isMechCustodyOpen, setIsMechCustodyOpen] = useState(false);
+
+  const handleOpenMechanicCustody = (mechIdentifier: string | MechanicDuty) => {
+    if (typeof mechIdentifier === 'object' && mechIdentifier !== null) {
+      setSelectedMechanic(mechIdentifier);
+      setIsMechCustodyOpen(true);
+      return;
+    }
+    const cleanName = (mechIdentifier || '').toLowerCase();
+    const found = FACTORY_MECHANICS_ROSTER.find(
+      (m) =>
+        m.name.toLowerCase().includes(cleanName) ||
+        cleanName.includes(m.name.toLowerCase()) ||
+        m.id.toLowerCase() === cleanName
+    );
+    setSelectedMechanic(found || FACTORY_MECHANICS_ROSTER[0]);
+    setIsMechCustodyOpen(true);
+  };
 
   // Requisition Hub Modal tab: 'MONTHLY_INDENT' | 'URGENT_NEED' | 'CRITICAL_CEO' | 'VIEW_ALL'
   const [reqModalTab, setReqModalTab] = useState<RequisitionType | 'VIEW_ALL'>('MONTHLY_INDENT');
@@ -891,6 +916,93 @@ export default function InventoryPage() {
               </table>
             </div>
           </div>
+
+          {/* MECHANIC TOOL CRIB CUSTODY & HANDLED EQUIPMENT */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <Wrench className="w-4 h-4 text-indigo-600" />
+                  <span>👨‍🔧 Mechanic Tool Crib Custody &amp; Handled Equipment</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Click any mechanic name to inspect active checked-out calibration devices, drawn spare parts, and toolbox kits.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  {FACTORY_MECHANICS_ROSTER.length} Mechanics on Duty
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {FACTORY_MECHANICS_ROSTER.map((mech) => {
+                const specialToolsCount = mech.checkedOutTools?.length || 0;
+                const drawnSparesCount = mech.activePartsDrawn?.reduce((acc, p) => acc + p.quantity, 0) || 0;
+                const tasksCount = mech.activeMachineTasks?.length || 0;
+
+                return (
+                  <div
+                    key={mech.id}
+                    onClick={() => handleOpenMechanicCustody(mech)}
+                    className="p-4 rounded-2xl border border-slate-200 hover:border-indigo-400 bg-gradient-to-br from-white via-slate-50/50 to-indigo-50/30 shadow-2xs hover:shadow-md transition cursor-pointer group space-y-3"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-xs ${mech.avatarColor} group-hover:scale-105 transition`}
+                        >
+                          {mech.name.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-indigo-600 transition">
+                              {mech.name}
+                            </span>
+                            <span className="text-[10px] font-mono font-bold text-slate-400">
+                              ({mech.id})
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 font-medium truncate max-w-[180px]">
+                            {mech.role}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800">
+                        {mech.status.replace('_', ' ')}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-[11px] bg-white p-2.5 rounded-xl border border-slate-200/80">
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Checked-out Tools:</span>
+                        <span className="font-bold text-amber-700 font-mono">
+                          {specialToolsCount} Gauges
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Drawn Crib Parts:</span>
+                        <span className="font-bold text-emerald-700 font-mono">
+                          {drawnSparesCount} Units in hand
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-100">
+                      <span className="truncate max-w-[160px] text-slate-600 font-medium">
+                        📍 {mech.assignedLines}
+                      </span>
+                      <span className="text-indigo-600 font-bold group-hover:translate-x-0.5 transition flex items-center gap-1">
+                        <span>Inspect Tools</span>
+                        <span>➜</span>
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
       {/* MODAL 1: RAISE SPARE NEED / MONTHLY INDENT MODAL */}
@@ -1316,9 +1428,18 @@ export default function InventoryPage() {
                         </div>
 
                         <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs flex justify-between items-center text-slate-600">
-                          <div>
-                            <b>Target Lines:</b> {req.targetLine || 'Universal Plant'} • <b>Raised by:</b>{' '}
-                            {req.requestedBy} ({req.requestedByRole})
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span><b>Target Lines:</b> {req.targetLine || 'Universal Plant'} • <b>Raised by:</b></span>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenMechanicCustody(req.requestedBy)}
+                              className="font-bold text-indigo-700 hover:text-indigo-900 hover:underline inline-flex items-center gap-1 cursor-pointer bg-indigo-50 hover:bg-indigo-100 px-1.5 py-0.5 rounded border border-indigo-200 transition"
+                              title="Click to view tools and parts handled by this mechanic"
+                            >
+                              <Wrench className="w-3 h-3 text-indigo-600" />
+                              <span>{req.requestedBy}</span>
+                            </button>
+                            <span className="text-slate-500">({req.requestedByRole})</span>
                           </div>
                           <div className="text-[11px] text-slate-500 italic max-w-md truncate">
                             {req.justification}
@@ -1358,8 +1479,17 @@ export default function InventoryPage() {
                                 </span>
                               )}
                             </span>
-                            <span>
-                              Raised by: <span className="font-semibold text-slate-700">{req.requestedBy}</span>
+                            <span className="flex items-center gap-1">
+                              <span>Raised by:</span>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenMechanicCustody(req.requestedBy)}
+                                className="font-bold text-indigo-700 hover:text-indigo-900 hover:underline inline-flex items-center gap-1 cursor-pointer bg-indigo-50 hover:bg-indigo-100 px-1.5 py-0.5 rounded border border-indigo-200 transition"
+                                title="Click to view tools and parts handled by this mechanic"
+                              >
+                                <Wrench className="w-3 h-3 text-indigo-600" />
+                                <span>{req.requestedBy}</span>
+                              </button>
                             </span>
                           </div>
                           <p className="text-slate-700 text-xs leading-relaxed font-medium">
@@ -1974,6 +2104,13 @@ export default function InventoryPage() {
           </div>
         </div>
       )}
+
+      {/* Mechanic Handled Tools & Crib Custody Modal */}
+      <MechanicCustodyModal
+        mechanic={selectedMechanic}
+        isOpen={isMechCustodyOpen}
+        onClose={() => setIsMechCustodyOpen(false)}
+      />
     </div>
   );
 }

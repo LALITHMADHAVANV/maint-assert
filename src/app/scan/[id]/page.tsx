@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -15,6 +15,7 @@ import {
   MapPin,
   Tag,
   ShieldCheck,
+  Loader2,
 } from 'lucide-react';
 import { Machine, FloorLine, RepairUrgency } from '@/types/cmms';
 import {
@@ -25,7 +26,7 @@ import {
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 
-export default function MobileScanPage() {
+function MobileScanContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -511,3 +512,21 @@ export default function MobileScanPage() {
     </div>
   );
 }
+
+export default function MobileScanPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-slate-600">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+          <div className="text-sm font-semibold text-slate-800">
+            Loading Asset QR Record...
+          </div>
+        </div>
+      }
+    >
+      <MobileScanContent />
+    </Suspense>
+  );
+}
+

@@ -1,7 +1,8 @@
 export type AssetCategory =
   | 'MACHINE' // Sewing & Industrial Machinery
-  | 'TABLE' // Work, Cutting, Inspection & Packing Tables
-  | 'CHAIR' // Operator, Supervisor & Mechanic Seating
+  | 'FURNITURE' // Furniture: Work Tables, Cutting Tables, Operator & Supervisor Chairs, Workshop Stools
+  | 'TABLE' // Work Tables (backward compatibility)
+  | 'CHAIR' // Chairs & Seating (backward compatibility)
   | 'VEHICLE' // Forklifts, Pallet Jacks, & Trolleys
   | 'UTILITY' // Central Utilities, Lighting Fixtures & Ventilation Fans
   | 'LIGHT' // Legacy alias under UTILITY

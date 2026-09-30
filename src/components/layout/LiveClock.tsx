@@ -32,9 +32,9 @@ export function LiveClock() {
   }, []);
 
   return (
-    <div className="hidden lg:flex items-center space-x-2 text-xs text-slate-300 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 shadow-inner">
-      <Clock className="w-3.5 h-3.5 text-indigo-400" />
-      <span className="font-mono font-medium">
+    <div className="hidden lg:flex items-center space-x-2 text-xs text-slate-700 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
+      <Clock className="w-3.5 h-3.5 text-indigo-600" />
+      <span className="font-mono font-semibold text-slate-800">
         {dateStr ? `${dateStr} • ` : ''}
         {timeStr}
       </span>

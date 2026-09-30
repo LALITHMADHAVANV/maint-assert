@@ -96,21 +96,21 @@ export function CameraScannerModal({ isOpen, onClose }: CameraScannerModalProps)
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        <div className="bg-slate-900 px-5 py-4 text-white flex items-center justify-between">
+        <div className="bg-slate-50 px-5 py-4 text-slate-800 flex items-center justify-between border-b border-slate-200">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold shadow-xs">
               <Camera className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="text-sm font-bold">Live Camera QR Scanner</h4>
-              <p className="text-[10px] text-slate-400">Aim camera at machine asset sticker</p>
+              <h4 className="text-sm font-bold text-slate-900">Live Camera QR Scanner</h4>
+              <p className="text-[10px] text-slate-500 font-medium">Aim camera at machine asset sticker</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg transition"
+            className="text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 p-1 rounded-lg transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

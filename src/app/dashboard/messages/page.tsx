@@ -112,44 +112,42 @@ export default function CeoMessagesPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Executive Header Banner */}
-      <div className="bg-gradient-to-r from-slate-950 via-purple-950 to-slate-950 text-white rounded-2xl p-6 sm:p-8 shadow-xl border border-purple-900/50 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
-        
+      <div className="bg-white text-slate-800 rounded-2xl p-6 sm:p-8 shadow-xs border border-purple-200 relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-400/30">
-                <Crown className="w-3.5 h-3.5 text-amber-400" />
-                <span>Executive Office & Chief Executive Decision Desk</span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                <Crown className="w-3.5 h-3.5 text-amber-500" />
+                <span>Executive Office &amp; Chief Executive Decision Desk</span>
               </span>
-              <span className="text-xs text-purple-300 font-mono">
+              <span className="text-xs text-purple-700 font-mono font-semibold">
                 {user?.name || 'Dr. K. Ramanathan'} ({role || 'CEO'})
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Critical Spare Parts & Emergency Approvals
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+              Critical Spare Parts &amp; Emergency Approvals
             </h1>
-            <p className="text-sm text-purple-200/80 mt-1 max-w-2xl">
+            <p className="text-sm text-slate-500 mt-1 max-w-2xl">
               Real-time urgent breakdown dispatches and line-stoppage part requests requiring immediate CEO financial authorization.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="bg-purple-900/40 backdrop-blur-xs border border-purple-700/50 rounded-xl px-4 py-2.5 text-right">
-              <span className="block text-[11px] uppercase tracking-wider text-purple-300 font-semibold">
+            <div className="bg-purple-50/80 border border-purple-200 rounded-xl px-4 py-2.5 text-right shadow-2xs">
+              <span className="block text-[11px] uppercase tracking-wider text-purple-800 font-bold">
                 Pending Decisions
               </span>
               <div className="flex items-center justify-end gap-2">
                 {pendingCount > 0 && <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />}
-                <span className="text-2xl font-black text-rose-400">{pendingCount}</span>
+                <span className="text-2xl font-black text-rose-600">{pendingCount}</span>
               </div>
             </div>
 
-            <div className="bg-purple-900/40 backdrop-blur-xs border border-purple-700/50 rounded-xl px-4 py-2.5 text-right">
-              <span className="block text-[11px] uppercase tracking-wider text-purple-300 font-semibold">
+            <div className="bg-purple-50/80 border border-purple-200 rounded-xl px-4 py-2.5 text-right shadow-2xs">
+              <span className="block text-[11px] uppercase tracking-wider text-purple-800 font-bold">
                 Emergency Budget Impact
               </span>
-              <span className="text-2xl font-black text-amber-400">₹{pendingCapex.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              <span className="text-2xl font-black text-amber-700 font-mono">₹{pendingCapex.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
           </div>
         </div>

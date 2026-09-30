@@ -122,17 +122,17 @@ export function ScanModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
-        <div className="bg-slate-900 px-5 py-4 text-white flex items-center justify-between">
+        <div className="bg-slate-50 px-5 py-4 text-slate-800 flex items-center justify-between border-b border-slate-200">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs">
               <QrCode className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-sm font-bold tracking-tight">Floor QR Terminal</h4>
-              <p className="text-[10px] text-slate-400">Handheld Operator & Mechanic Dispatcher</p>
+              <h4 className="text-sm font-bold tracking-tight text-slate-900">Floor QR Terminal</h4>
+              <p className="text-[10px] text-slate-500 font-medium">Handheld Operator &amp; Mechanic Dispatcher</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -140,7 +140,7 @@ export function ScanModal({
               <button
                 type="button"
                 onClick={onOpenLiveScanner}
-                className="text-xs bg-slate-800 hover:bg-slate-700 text-amber-300 px-2.5 py-1 rounded-lg border border-slate-700 flex items-center gap-1.5 transition"
+                className="text-xs bg-white hover:bg-slate-100 text-amber-700 px-2.5 py-1 rounded-lg border border-slate-200 flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
                 title="Use Camera Scanner"
               >
                 <Camera className="w-3.5 h-3.5" />
@@ -149,7 +149,7 @@ export function ScanModal({
             )}
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-white p-1 rounded-lg transition"
+              className="text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 p-1 rounded-lg transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>

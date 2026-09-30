@@ -11,6 +11,9 @@ import {
   Wrench,
   CheckCheck,
   CheckCircle2,
+  Check,
+  UserCheck,
+  ArrowRightLeft,
   X,
   Plus,
   BellRing,
@@ -25,7 +28,7 @@ import {
   Info,
   Users,
 } from 'lucide-react';
-import { RepairTicket, Machine, SparePart, PPMSchedule } from '@/types/cmms';
+import { RepairTicket, RepairUrgency, Machine, SparePart, PPMSchedule } from '@/types/cmms';
 import {
   subscribeRepairs,
   subscribeMachines,
@@ -34,10 +37,13 @@ import {
   resolveRepairTicket,
   completePPMTask,
   createPPMSchedule,
+  assignRepairTicket,
+  assignMechanicTask,
 } from '@/lib/services/cmmsService';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { TeamScheduleModal } from '@/components/calendar/TeamScheduleModal';
+import { FACTORY_MECHANICS_ROSTER } from '@/lib/constants/mechanics';
 
 // Helper to format Date to 'YYYY-MM-DD'
 function toDateKey(d: Date): string {
@@ -62,8 +68,8 @@ export default function CalendarPage() {
   const [viewMode, setViewMode] = useState<'month' | 'agenda'>('month');
   const [filterType, setFilterType] = useState<'ALL' | 'CRITICAL' | 'REPAIRS' | 'PPM' | 'COMPLETED'>('ALL');
 
-  // Senior Mechanic & Admin have authority to schedule new PPM overhauls
-  const canSchedulePPM = role === 'SENIOR_MECHANIC' || role === 'ADMIN' || role === 'ASSET_MANAGER';
+  // Senior Mechanic has authority to schedule new PPM overhauls
+  const canSchedulePPM = role === 'SENIOR_MECHANIC';
 
   // Resolve Repair modal state
   const [isResolveOpen, setIsResolveOpen] = useState(false);
@@ -85,6 +91,14 @@ export default function CalendarPage() {
   // Senior Mechanic Team Work Schedule Pop-up state
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
 
+  // Senior Mechanic Direct Inline Dispatch State (No popups)
+  const [isInlineDispatchOpen, setIsInlineDispatchOpen] = useState(false);
+  const [inlineMachineId, setInlineMachineId] = useState('');
+  const [inlineTaskTitle, setInlineTaskTitle] = useState('');
+  const [inlineAssignee, setInlineAssignee] = useState('Ramesh Kumar');
+  const [inlineUrgency, setInlineUrgency] = useState<RepairUrgency>('WARNING');
+  const [isSubmittingInline, setIsSubmittingInline] = useState(false);
+
   // Real-time subscriptions
   useEffect(() => {
     const unsubR = subscribeRepairs((data) => setRepairs(data));
@@ -100,12 +114,15 @@ export default function CalendarPage() {
     };
   }, []);
 
-  // Set default machine for PPM schedule modal once machines load
+  // Set default machine for PPM and inline dispatch once machines load
   useEffect(() => {
     if (machines.length > 0 && !newPPMMachineId) {
       setNewPPMMachineId(machines[0].id);
     }
-  }, [machines, newPPMMachineId]);
+    if (machines.length > 0 && !inlineMachineId) {
+      setInlineMachineId(machines[0].id);
+    }
+  }, [machines, newPPMMachineId, inlineMachineId]);
 
   // Sync modal date when selectedDate changes
   useEffect(() => {
@@ -414,6 +431,66 @@ export default function CalendarPage() {
     }
   };
 
+  // Direct 1-Click Move Task to Mechanic or Myself (No popup)
+  const handleDirectMoveTask = async (ticketId: string, targetMechanicName: string) => {
+    try {
+      await assignRepairTicket(ticketId, targetMechanicName);
+      const isSelf = targetMechanicName.toLowerCase().includes((user?.name || 'ramesh').toLowerCase());
+      showToast(
+        isSelf
+          ? `Work Order #${ticketId} moved directly to yourself (${targetMechanicName})!`
+          : `Work Order #${ticketId} moved directly to ${targetMechanicName}!`,
+        'success'
+      );
+    } catch (err) {
+      console.error(err);
+      showToast('Error moving task to mechanic', 'error');
+    }
+  };
+
+  // Inline Quick Dispatch (No popup)
+  const handleInlineAssignTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const targetMachineId = inlineMachineId || (machines.length > 0 ? machines[0].id : '');
+    if (!targetMachineId) {
+      showToast('Please select a machine.', 'error');
+      return;
+    }
+    const taskText = inlineTaskTitle.trim() || 'Breakdown Inspection & Looper Timing';
+
+    setIsSubmittingInline(true);
+    try {
+      const targetMachine = machines.find((m) => m.id === targetMachineId);
+      const ticketId = await assignMechanicTask({
+        machineId: targetMachineId,
+        machineType: targetMachine?.typeName || targetMachine?.type || 'Sewing Machine',
+        line: targetMachine?.currentLine || 'Line 01',
+        taskTitle: taskText,
+        faultDetails: `Direct dispatch from Senior Mechanic. Scheduled for ${selectedDate}.`,
+        urgency: inlineUrgency,
+        assignedTo: inlineAssignee || user?.name || 'Ramesh Kumar',
+        assignedBy: `${user?.name || 'Ramesh Kumar'} (Senior Mechanic)`,
+        scheduledDate: selectedDate,
+        shift: 'Shift A (07:00 - 15:30)',
+      });
+
+      const isSelf = (inlineAssignee || '').toLowerCase().includes((user?.name || 'ramesh').toLowerCase());
+      showToast(
+        isSelf
+          ? `Work Order #${ticketId} created & assigned to yourself!`
+          : `Work Order #${ticketId} created & dispatched to ${inlineAssignee}!`,
+        'success'
+      );
+      setInlineTaskTitle('');
+      setIsInlineDispatchOpen(false);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to assign task', 'error');
+    } finally {
+      setIsSubmittingInline(false);
+    }
+  };
+
   // Submit New PPM Schedule
   const handleCreatePPMSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -479,10 +556,19 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          {/* Senior Mechanic & Plant Admin Controls: Everyone's Work Board & Schedule PPM */}
+          {/* Senior Mechanic Controls: Inline Assign/Move, Everyone's Work Board & Schedule PPM */}
           <div className="flex items-center flex-wrap gap-2.5">
             {canSchedulePPM && (
               <>
+                <button
+                  onClick={() => setIsInlineDispatchOpen((prev) => !prev)}
+                  className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm shadow-emerald-600/25 cursor-pointer"
+                  title="Direct inline task dispatch: assign a task directly on this page without popups"
+                >
+                  <Wrench className="w-3.5 h-3.5" />
+                  <span>⚡ Assign / Move Task</span>
+                </button>
+
                 <button
                   onClick={() => setIsTeamModalOpen(true)}
                   className="px-3.5 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm shadow-indigo-600/25 cursor-pointer"
@@ -841,15 +927,145 @@ export default function CalendarPage() {
                 </div>
               </div>
 
-              {/* Senior Mechanic Quick Trigger to see everyone's work on this date */}
+              {/* Senior Mechanic Direct Inline Work Dispatch Section (No Popups) */}
               {canSchedulePPM && (
-                <button
-                  onClick={() => setIsTeamModalOpen(true)}
-                  className="w-full mt-3 py-2 px-3 bg-gradient-to-r from-violet-50 to-indigo-50 hover:from-violet-100 hover:to-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
-                >
-                  <Users className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>👥 See Everyone&apos;s Work on {selectedDayData.isToday ? 'Today' : selectedDayData.dateFormatted.split(',')[0]}</span>
-                </button>
+                <div className="mt-3 space-y-2">
+                  <div className="p-3.5 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/90 rounded-2xl space-y-2.5 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs font-extrabold text-emerald-950">
+                        <Wrench className="w-4 h-4 text-emerald-600" />
+                        <span>Quick Task Dispatch (Direct Inline)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsInlineDispatchOpen(!isInlineDispatchOpen)}
+                        className="text-[10px] font-extrabold px-2 py-0.5 rounded-lg bg-emerald-200 hover:bg-emerald-300 text-emerald-900 uppercase transition cursor-pointer"
+                      >
+                        {isInlineDispatchOpen ? 'Hide' : '+ Assign Task'}
+                      </button>
+                    </div>
+
+                    {!isInlineDispatchOpen ? (
+                      <p className="text-[11px] text-emerald-900 leading-snug">
+                        Use the <strong>&quot;Move to Mechanic&quot;</strong> selector on any card below to transfer tasks directly, or click <strong>+ Assign Task</strong> to create one inline.
+                      </p>
+                    ) : (
+                      <form onSubmit={handleInlineAssignTask} className="space-y-2.5 pt-2 border-t border-emerald-200/70">
+                        <div>
+                          <label className="text-[10px] font-bold text-emerald-950 uppercase block mb-1">
+                            Target Machine:
+                          </label>
+                          <select
+                            value={inlineMachineId}
+                            onChange={(e) => setInlineMachineId(e.target.value)}
+                            className="w-full text-xs bg-white border border-emerald-300 rounded-xl px-2.5 py-1.5 font-bold text-slate-800 outline-none focus:ring-1 focus:ring-emerald-500"
+                          >
+                            {machines.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.id} — {m.brand} {m.model} ({m.currentLine})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-emerald-950 uppercase block mb-1">
+                            Task Defect / Instructions:
+                          </label>
+                          <input
+                            type="text"
+                            value={inlineTaskTitle}
+                            onChange={(e) => setInlineTaskTitle(e.target.value)}
+                            placeholder="e.g. Looper timing collision, reset clearance..."
+                            className="w-full text-xs bg-white border border-emerald-300 rounded-xl px-2.5 py-1.5 font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-emerald-500"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] font-bold text-emerald-950 uppercase block mb-1">
+                              Priority:
+                            </label>
+                            <select
+                              value={inlineUrgency}
+                              onChange={(e) => setInlineUrgency(e.target.value as RepairUrgency)}
+                              className="w-full text-xs bg-white border border-emerald-300 rounded-xl px-2 py-1.5 font-bold text-slate-800 outline-none"
+                            >
+                              <option value="WARNING">Routine / Normal</option>
+                              <option value="CRITICAL">🚨 Critical Stoppage</option>
+                            </select>
+                          </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-emerald-950 uppercase block mb-1">
+                            Move &amp; Assign To:
+                          </label>
+                          <div className="flex flex-wrap gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setInlineAssignee(user?.name || 'Ramesh Kumar')}
+                              className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer ${
+                                inlineAssignee.toLowerCase().includes('ramesh')
+                                  ? 'bg-indigo-600 text-white shadow-xs ring-1 ring-indigo-500'
+                                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+                              }`}
+                            >
+                              <UserCheck className="w-3 h-3" />
+                              <span>Assign to Myself</span>
+                            </button>
+                            {FACTORY_MECHANICS_ROSTER.filter(
+                              (m) => !m.name.toLowerCase().includes('ramesh')
+                            ).map((m) => (
+                              <button
+                                key={m.id}
+                                type="button"
+                                onClick={() => setInlineAssignee(m.name)}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer ${
+                                  inlineAssignee === m.name
+                                    ? 'bg-emerald-600 text-white shadow-xs ring-1 ring-emerald-500'
+                                    : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+                                }`}
+                              >
+                                <span>Move to {m.name.split(' ')[0]}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            type="submit"
+                            disabled={isSubmittingInline}
+                            className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            <span>
+                              {inlineAssignee.toLowerCase().includes('ramesh')
+                                ? 'Assign to Myself'
+                                : `Move to ${inlineAssignee.split(' ')[0]}`}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsInlineDispatchOpen(false)}
+                            className="px-3 py-2 text-xs text-emerald-800 hover:text-emerald-950 font-bold"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => setIsTeamModalOpen(true)}
+                    className="w-full py-2 px-3 bg-gradient-to-r from-violet-50 to-indigo-50 hover:from-violet-100 hover:to-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    <Users className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>👥 See Everyone&apos;s Work on {selectedDayData.isToday ? 'Today' : selectedDayData.dateFormatted.split(',')[0]}</span>
+                  </button>
+                </div>
               )}
 
               {/* Day Tasks List */}
@@ -939,6 +1155,60 @@ export default function CalendarPage() {
                                 <CheckCheck className="w-3.5 h-3.5" />
                                 <span>Fixed in {t.downtimeMinutes}m</span>
                               </span>
+                            )}
+                          </div>
+
+                          {/* Direct 1-Click Move Buttons (Myself + Mechanics) */}
+                          <div className="pt-2 border-t border-slate-200/60 space-y-1.5">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                <ArrowRightLeft className="w-3 h-3 text-indigo-500" />
+                                <span>Move Task To:</span>
+                              </span>
+                              <span className="text-[10px] text-slate-500">
+                                Assigned: <strong className="text-slate-800 font-bold">{t.attendedBy || 'Unassigned'}</strong>
+                              </span>
+                            </div>
+
+                            {canSchedulePPM && !isCompleted && (
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                {/* 1. Move to Myself Button */}
+                                <button
+                                  onClick={() => handleDirectMoveTask(t.id, user?.name || 'Ramesh Kumar')}
+                                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer ${
+                                    t.attendedBy?.toLowerCase().includes('ramesh')
+                                      ? 'bg-indigo-600 text-white shadow-xs ring-1 ring-indigo-500 font-extrabold'
+                                      : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200'
+                                  }`}
+                                  title="Assign task directly to myself"
+                                >
+                                  <UserCheck className="w-3 h-3" />
+                                  <span>{t.attendedBy?.toLowerCase().includes('ramesh') ? '✓ With Myself' : 'Assign to Myself'}</span>
+                                </button>
+
+                                {/* 2. Move to Someone Else Buttons */}
+                                {FACTORY_MECHANICS_ROSTER.filter(
+                                  (m) => !m.name.toLowerCase().includes('ramesh')
+                                ).map((mech) => {
+                                  const isCurrent = t.attendedBy?.toLowerCase().includes(mech.name.toLowerCase());
+                                  const firstName = mech.name.split(' ')[0];
+
+                                  return (
+                                    <button
+                                      key={mech.id}
+                                      onClick={() => handleDirectMoveTask(t.id, mech.name)}
+                                      className={`px-2 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer ${
+                                        isCurrent
+                                          ? 'bg-emerald-600 text-white shadow-xs ring-1 ring-emerald-500 font-extrabold'
+                                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 hover:text-slate-900'
+                                      }`}
+                                      title={`Move task directly to ${mech.name} (${mech.role})`}
+                                    >
+                                      <span>{isCurrent ? `✓ ${firstName}` : `Move to ${firstName}`}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1107,6 +1377,60 @@ export default function CalendarPage() {
                                   <Wrench className="w-3 h-3" />
                                   <span>Attend</span>
                                 </button>
+                              )}
+                            </div>
+
+                            {/* Direct 1-Click Move Buttons (Myself + Mechanics) */}
+                            <div className="pt-2 border-t border-slate-200/60 space-y-1.5">
+                              <div className="flex items-center justify-between text-[11px]">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                  <ArrowRightLeft className="w-3 h-3 text-indigo-500" />
+                                  <span>Move Task To:</span>
+                                </span>
+                                <span className="text-[10px] text-slate-500">
+                                  Assigned: <strong className="text-slate-800 font-bold">{r.attendedBy || 'Unassigned'}</strong>
+                                </span>
+                              </div>
+
+                              {canSchedulePPM && !isDone && (
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  {/* 1. Move to Myself Button */}
+                                  <button
+                                    onClick={() => handleDirectMoveTask(r.id, user?.name || 'Ramesh Kumar')}
+                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer ${
+                                      r.attendedBy?.toLowerCase().includes('ramesh')
+                                        ? 'bg-indigo-600 text-white shadow-xs ring-1 ring-indigo-500 font-extrabold'
+                                        : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200'
+                                    }`}
+                                    title="Assign task directly to myself"
+                                  >
+                                    <UserCheck className="w-3 h-3" />
+                                    <span>{r.attendedBy?.toLowerCase().includes('ramesh') ? '✓ With Myself' : 'Assign to Myself'}</span>
+                                  </button>
+
+                                  {/* 2. Move to Someone Else Buttons */}
+                                  {FACTORY_MECHANICS_ROSTER.filter(
+                                    (m) => !m.name.toLowerCase().includes('ramesh')
+                                  ).map((mech) => {
+                                    const isCurrent = r.attendedBy?.toLowerCase().includes(mech.name.toLowerCase());
+                                    const firstName = mech.name.split(' ')[0];
+
+                                    return (
+                                      <button
+                                        key={mech.id}
+                                        onClick={() => handleDirectMoveTask(r.id, mech.name)}
+                                        className={`px-2 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer ${
+                                          isCurrent
+                                            ? 'bg-emerald-600 text-white shadow-xs ring-1 ring-emerald-500 font-extrabold'
+                                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 hover:text-slate-900'
+                                        }`}
+                                        title={`Move task directly to ${mech.name} (${mech.role})`}
+                                      >
+                                        <span>{isCurrent ? `✓ ${firstName}` : `Move to ${firstName}`}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                               )}
                             </div>
                           </div>

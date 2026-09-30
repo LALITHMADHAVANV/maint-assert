@@ -27,76 +27,10 @@ import { RepairTicket, PPMSchedule, Machine } from '@/types/cmms';
 import { assignRepairTicket, completePPMTask } from '@/lib/services/cmmsService';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
+import { FACTORY_MECHANICS_ROSTER, MechanicDuty } from '@/lib/constants/mechanics';
 
-export interface MechanicDuty {
-  id: string;
-  name: string;
-  role: string;
-  shift: string;
-  specialty: string;
-  assignedLines: string;
-  status: 'ON_DUTY' | 'STANDBY' | 'ON_LEAVE';
-  phone: string;
-  avatarColor: string;
-}
-
-export const FACTORY_MECHANICS_ROSTER: MechanicDuty[] = [
-  {
-    id: 'MEC-01',
-    name: 'Ramesh Kumar',
-    role: 'Senior Master Mechanic (Lead)',
-    shift: 'Shift A (07:00 - 15:30)',
-    specialty: 'Heavy Lockstitch, Looper Timing & Feed Calibration',
-    assignedLines: 'Plant-wide Lead • Lines A & B',
-    status: 'ON_DUTY',
-    phone: '+91 98401 23451',
-    avatarColor: 'bg-indigo-600 text-white',
-  },
-  {
-    id: 'MEC-08',
-    name: 'Suresh Babu',
-    role: 'Line Sewing Mechanic',
-    shift: 'Shift A (07:00 - 15:30)',
-    specialty: 'Single Needle Lockstitch (SNLS) & Tension Balances',
-    assignedLines: 'Line A (Station 01 to 08)',
-    status: 'ON_DUTY',
-    phone: '+91 98401 23452',
-    avatarColor: 'bg-amber-600 text-white',
-  },
-  {
-    id: 'MEC-12',
-    name: 'Praveen Raj',
-    role: 'Line Overlock Specialist',
-    shift: 'Shift A (07:00 - 15:30)',
-    specialty: '4-Thread & 5-Thread Safety Stitch Overlocks',
-    assignedLines: 'Line B (Station 01 to 08)',
-    status: 'ON_DUTY',
-    phone: '+91 98401 23453',
-    avatarColor: 'bg-blue-600 text-white',
-  },
-  {
-    id: 'MEC-15',
-    name: 'Anand Kumar',
-    role: 'Electronics & Direct-Drive Servo Tech',
-    shift: 'Shift B (15:30 - 23:00)',
-    specialty: 'Direct-Drive Motors, PCBs & Solenoids',
-    assignedLines: 'Lines C & D • Electronics Lab',
-    status: 'ON_DUTY',
-    phone: '+91 98401 23454',
-    avatarColor: 'bg-purple-600 text-white',
-  },
-  {
-    id: 'MEC-04',
-    name: 'M. Selvam',
-    role: 'Preventive Maintenance (PPM) Tech',
-    shift: 'Shift A (07:00 - 15:30)',
-    specialty: 'Lubrication Siphons, Wick Flushing & Filter Mesh',
-    assignedLines: 'Fleet-wide PPM Servicing',
-    status: 'ON_DUTY',
-    phone: '+91 98401 23455',
-    avatarColor: 'bg-emerald-600 text-white',
-  },
-];
+export type { MechanicDuty };
+export { FACTORY_MECHANICS_ROSTER };
 
 interface TeamScheduleModalProps {
   isOpen: boolean;
@@ -238,7 +172,7 @@ export function TeamScheduleModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto print:static print:p-0 print:bg-white print-modal-overlay">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto print:static print:p-0 print:bg-white print-modal-overlay">
       <div className="bg-slate-50 rounded-3xl max-w-6xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-300 overflow-hidden animate-in fade-in zoom-in-95 duration-150 print:max-w-none print:w-full print:border-none print:shadow-none print:bg-white print:rounded-none print:overflow-visible print-modal-container">
         
         {/* Printed Document Header */}
@@ -263,21 +197,21 @@ export function TeamScheduleModal({
         </div>
 
         {/* Modal Top Header */}
-        <div className="bg-slate-900 px-6 py-4 text-white flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0 no-print">
+        <div className="bg-slate-50 px-6 py-4 text-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0 border-b border-slate-200 no-print">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-500/25">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-xs">
               <Users className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-extrabold tracking-tight">
-                  Senior Mechanic Duty Roster & Dispatch Board
+                <h3 className="text-base font-extrabold tracking-tight text-slate-900">
+                  Senior Mechanic Duty Roster &amp; Dispatch Board
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/30 text-indigo-300 border border-indigo-400/30">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
                   Senior Mechanic Desk
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 Live oversight of all mechanics&apos; scheduled work, breakdown tickets, and PPM assignments on any selected date.
               </p>
             </div>
@@ -286,16 +220,16 @@ export function TeamScheduleModal({
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
               title="Print Daily Shift Roster for Notice Board"
             >
-              <Printer className="w-3.5 h-3.5 text-slate-400" />
+              <Printer className="w-3.5 h-3.5 text-slate-500" />
               <span>Print Roster</span>
             </button>
 
             <button
               onClick={onClose}
-              className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
+              className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -360,20 +294,55 @@ export function TeamScheduleModal({
           </div>
         </div>
 
-        {/* Unassigned Work Alert Strip (if any breakdown has no technician) */}
+        {/* Unassigned Work Alert Strip with Direct 1-Click Move Controls */}
         {unassignedRepairs.length > 0 && (
-          <div className="bg-rose-50 border-b border-rose-200 px-6 py-2.5 flex items-center justify-between text-xs text-rose-900 shrink-0">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-rose-600 animate-ping" />
-              <span className="font-bold">
-                ⚠️ {unassignedRepairs.length} Unassigned Breakdown Ticket{unassignedRepairs.length > 1 ? 's' : ''} on {selectedDate}:
-              </span>
-              <span className="text-rose-700">
-                {unassignedRepairs.map((r) => `${r.machineId} (${r.faultCategory})`).join(', ')}
+          <div className="bg-rose-50 border-b border-rose-200 px-6 py-3 space-y-2 text-xs text-rose-950 shrink-0 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-rose-600 animate-ping" />
+                <span className="font-extrabold">
+                  ⚠️ {unassignedRepairs.length} Unassigned Breakdown Ticket{unassignedRepairs.length > 1 ? 's' : ''} on {selectedDate}
+                </span>
+              </div>
+              <span className="text-[11px] font-bold text-rose-700">
+                Move directly to a mechanic or yourself:
               </span>
             </div>
-            <div className="text-[11px] font-semibold text-rose-600">
-              Assign to available mechanics below ⬇️
+
+            <div className="flex flex-wrap gap-2">
+              {unassignedRepairs.map((r) => (
+                <div
+                  key={r.id}
+                  className="bg-white border border-rose-200 rounded-xl p-2.5 flex flex-wrap items-center gap-2 text-xs shadow-2xs"
+                >
+                  <span className="font-mono font-bold text-slate-900">#{r.id}</span>
+                  <span className="font-bold text-rose-800">{r.machineId}</span>
+                  <span className="text-slate-500">({r.faultCategory})</span>
+                  <div className="flex flex-wrap items-center gap-1.5 ml-auto">
+                    <button
+                      onClick={() => handleReassign(r.id, user?.name || 'Ramesh Kumar')}
+                      className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-[10px] font-bold rounded-lg transition cursor-pointer flex items-center gap-1"
+                      title="Assign task directly to myself"
+                    >
+                      <UserCheck className="w-3 h-3" />
+                      <span>Assign to Myself</span>
+                    </button>
+                    {FACTORY_MECHANICS_ROSTER.filter((m) => !m.name.toLowerCase().includes('ramesh')).map((mech) => {
+                      const firstName = mech.name.split(' ')[0];
+                      return (
+                        <button
+                          key={mech.id}
+                          onClick={() => handleReassign(r.id, mech.name)}
+                          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-[10px] font-bold rounded-lg transition cursor-pointer hover:text-slate-900"
+                          title={`Move task directly to ${mech.name}`}
+                        >
+                          Move to {firstName}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -594,43 +563,69 @@ export function TeamScheduleModal({
                                     {t.faultDetails}
                                   </p>
 
-                                  {/* Senior Mechanic Dispatch & Reassign Bar */}
-                                  <div className="flex items-center justify-between pt-1 border-t border-slate-200/50">
-                                    {!isDone && onOpenResolveModal && (
-                                      <button
-                                        onClick={() => onOpenResolveModal(t)}
-                                        className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold rounded-lg transition flex items-center gap-1 cursor-pointer"
-                                      >
-                                        <Wrench className="w-3 h-3" />
-                                        <span>Attend</span>
-                                      </button>
-                                    )}
-
-                                    {/* Reassign Ticket Dropdown */}
-                                    <div className="flex items-center gap-1.5 ml-auto">
-                                      <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
-                                        <ArrowRightLeft className="w-3 h-3" />
-                                        <span>Reassign:</span>
+                                  {/* Senior Mechanic Dispatch & Direct 1-Click Move Bar */}
+                                  <div className="pt-2 border-t border-slate-200/50 space-y-1.5">
+                                    <div className="flex items-center justify-between text-[10px]">
+                                      {!isDone && onOpenResolveModal ? (
+                                        <button
+                                          onClick={() => onOpenResolveModal(t)}
+                                          className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold rounded-lg transition flex items-center gap-1 cursor-pointer"
+                                        >
+                                          <Wrench className="w-3 h-3" />
+                                          <span>Attend</span>
+                                        </button>
+                                      ) : (
+                                        <span />
+                                      )}
+                                      <span className="text-slate-500 font-semibold flex items-center gap-1 ml-auto">
+                                        <ArrowRightLeft className="w-3 h-3 text-indigo-500" />
+                                        <span>Move to:</span>
                                       </span>
-                                      <select
-                                        defaultValue=""
-                                        onChange={(e) => {
-                                          if (e.target.value) {
-                                            handleReassign(t.id, e.target.value);
-                                            e.target.value = '';
-                                          }
-                                        }}
-                                        className="text-[10px] bg-white border border-slate-300 rounded px-1.5 py-0.5 font-bold text-slate-700 outline-none cursor-pointer"
+                                    </div>
+
+                                    {/* Direct 1-Click Move Buttons (Myself + Mechanics) */}
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                      {/* 1. Move to Myself Button */}
+                                      <button
+                                        onClick={() => handleReassign(t.id, user?.name || 'Ramesh Kumar')}
+                                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer ${
+                                          mechanic.name.toLowerCase().includes('ramesh')
+                                            ? 'bg-indigo-600 text-white shadow-xs ring-1 ring-indigo-500 font-extrabold cursor-default'
+                                            : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200'
+                                        }`}
+                                        title="Assign task directly to myself"
                                       >
-                                        <option value="" disabled>
-                                          Move to...
-                                        </option>
-                                        {FACTORY_MECHANICS_ROSTER.filter((m) => m.name !== mechanic.name).map((m) => (
-                                          <option key={m.id} value={m.name}>
-                                            {m.name}
-                                          </option>
-                                        ))}
-                                      </select>
+                                        <UserCheck className="w-3 h-3" />
+                                        <span>
+                                          {mechanic.name.toLowerCase().includes('ramesh')
+                                            ? '✓ With Myself'
+                                            : 'Assign to Myself'}
+                                        </span>
+                                      </button>
+
+                                      {/* 2. Move to Someone Else Buttons */}
+                                      {FACTORY_MECHANICS_ROSTER.filter(
+                                        (m) => !m.name.toLowerCase().includes('ramesh')
+                                      ).map((mech) => {
+                                        const isCurrent = mechanic.name.toLowerCase().includes(mech.name.toLowerCase());
+                                        const firstName = mech.name.split(' ')[0];
+
+                                        return (
+                                          <button
+                                            key={mech.id}
+                                            onClick={() => handleReassign(t.id, mech.name)}
+                                            disabled={isCurrent}
+                                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer ${
+                                              isCurrent
+                                                ? 'bg-emerald-600 text-white shadow-xs ring-1 ring-emerald-500 font-extrabold cursor-default'
+                                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 hover:text-slate-900'
+                                            }`}
+                                            title={`Move task directly to ${mech.name} (${mech.role})`}
+                                          >
+                                            <span>{isCurrent ? `✓ ${firstName}` : `Move to ${firstName}`}</span>
+                                          </button>
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 </div>
@@ -699,7 +694,7 @@ export function TeamScheduleModal({
         {/* Modal Bottom Action Footer */}
         <div className="bg-white px-6 py-3.5 border-t border-slate-200 flex items-center justify-between shrink-0">
           <div className="text-xs text-slate-500">
-            Senior Mechanic Shift Supervisory Control • Syncs directly with Cloud Firestore.
+            Senior Mechanic Shift Supervisory Control • Syncs directly with Supabase.
           </div>
           <button
             onClick={onClose}

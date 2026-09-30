@@ -271,22 +271,22 @@ export default function UserManagementPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-xl border border-indigo-900/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white text-slate-800 rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
-              <Shield className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              <Shield className="w-3.5 h-3.5 text-indigo-600" />
               <span>Plant Administrator Desk</span>
             </span>
-            <span className="text-xs text-indigo-300 font-mono">
+            <span className="text-xs text-slate-500 font-mono font-medium">
               Live Supabase Authentication &amp; RBAC
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2.5">
-            <Users className="w-7 h-7 text-indigo-400" />
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2.5 text-slate-900">
+            <Users className="w-7 h-7 text-indigo-600" />
             <span>Factory User Directory &amp; Access Provisioning</span>
           </h1>
-          <p className="text-xs sm:text-sm text-indigo-200/80 mt-1 max-w-2xl">
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
             Register and manage plant technicians, assign security roles, issue credentials, and configure authorization for floor operations.
           </p>
         </div>
@@ -295,7 +295,7 @@ export default function UserManagementPage() {
           <button
             type="button"
             onClick={() => setIsAddUserModalOpen(true)}
-            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer shadow-md shadow-indigo-600/30"
+            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer shadow-xs shadow-indigo-600/30"
           >
             <UserPlus className="w-4 h-4" />
             <span>+ Add New User</span>
@@ -804,7 +804,7 @@ export default function UserManagementPage() {
                   {isUpdatingPassword ? (
                     <>
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving to Firebase...</span>
+                      <span>Saving...</span>
                     </>
                   ) : (
                     <>

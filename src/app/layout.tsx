@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'TexTech Garments - CMMS & Asset Management',
-  description: 'Garment Factory Maintenance & Asset Management Suite (Next.js 15, Firestore & QR Tooling)',
+  description: 'Garment Factory Maintenance & Asset Management Suite (Next.js 16, Supabase & QR Tooling)',
 };
 
 export default function RootLayout({

@@ -3,6 +3,7 @@ import {
   MachineStatus,
   SparePart,
   RepairTicket,
+  RepairUrgency,
   PPMSchedule,
   FloorLine,
   PartRequisition,
@@ -176,9 +177,11 @@ export async function createMachine(machine: Machine): Promise<void> {
 
   if (isSupabaseConfigured) {
     try {
-      await supabase.from('machines').upsert(machine);
+      const { error } = await supabase.from('machines').upsert(machine);
+      if (error) throw new Error(error.message);
     } catch (e) {
       console.error('Supabase createMachine error:', e);
+      throw e;
     }
   }
 }
@@ -588,6 +591,120 @@ export async function assignRepairTicket(
   }
 }
 
+export interface AssignMechanicTaskInput {
+  machineId: string;
+  machineType?: string;
+  line?: string;
+  taskTitle: string;
+  faultDetails: string;
+  urgency: RepairUrgency;
+  assignedTo: string;
+  assignedBy: string;
+  scheduledDate: string; // 'YYYY-MM-DD'
+  shift?: string;
+  taskCategory?: string;
+}
+
+/**
+ * Senior Mechanic Dispatch: Assign a maintenance task or breakdown work order
+ * to oneself (Senior Mechanic) or another team technician.
+ */
+export async function assignMechanicTask(input: AssignMechanicTaskInput): Promise<string> {
+  const currentMachines = getLocal<Machine[]>(STORAGE_KEYS.MACHINES, SEED_MACHINES);
+  const targetMachine = currentMachines.find(
+    (m) => m.id.toLowerCase() === input.machineId.toLowerCase()
+  );
+
+  const machineType =
+    input.machineType || targetMachine?.typeName || targetMachine?.type || 'Sewing Machine';
+  const line = input.line || targetMachine?.currentLine || 'Line 01';
+
+  const ticketId = `WO-${Math.floor(1000 + Math.random() * 9000)}`;
+  const now = new Date();
+  const timeStr = now.toTimeString().split(' ')[0]; // 'HH:MM:SS'
+  const isoTimestamp = `${input.scheduledDate}T${timeStr}.000Z`;
+
+  const newTicket: RepairTicket = {
+    id: ticketId,
+    machineId: input.machineId,
+    machineType,
+    line,
+    reportedAt: isoTimestamp,
+    reportedBy: input.assignedBy || 'Senior Mechanic Dispatch',
+    faultCategory: input.taskTitle,
+    faultDetails: input.shift ? `[${input.shift}] ${input.faultDetails}` : input.faultDetails,
+    urgency: input.urgency,
+    status: 'IN_PROGRESS',
+    attendedBy: input.assignedTo,
+    resolvedAt: null,
+    downtimeMinutes: 0,
+    actionTaken: `Assigned by ${input.assignedBy} to ${input.assignedTo}`,
+    partsUsed: [],
+  };
+
+  // 1. Update repairs list in memory and localStorage
+  const currentRepairs = getLocal<RepairTicket[]>(STORAGE_KEYS.REPAIRS, SEED_REPAIRS);
+  const updatedRepairs = [newTicket, ...currentRepairs];
+  setLocal(STORAGE_KEYS.REPAIRS, updatedRepairs);
+  notifyLocal('repairs', updatedRepairs);
+
+  // 2. Adjust machine status
+  if (targetMachine) {
+    const newStatus: MachineStatus =
+      input.urgency === 'CRITICAL' ? 'BREAKDOWN' : 'UNDER_MAINTENANCE';
+    const updatedMachines = currentMachines.map((m) =>
+      m.id.toLowerCase() === input.machineId.toLowerCase() ? { ...m, status: newStatus } : m
+    );
+    setLocal(STORAGE_KEYS.MACHINES, updatedMachines);
+    notifyLocal('machines', updatedMachines);
+
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('machines').update({ status: newStatus }).eq('id', targetMachine.id);
+      } catch (e) {
+        console.error('Supabase assignMechanicTask machine update error:', e);
+      }
+    }
+  }
+
+  // 3. Persist to Supabase if available
+  if (isSupabaseConfigured) {
+    try {
+      await supabase.from('repair_tickets').insert(newTicket);
+    } catch (e) {
+      console.error('Supabase assignMechanicTask ticket insert error:', e);
+    }
+  }
+
+  // 4. If task is PPM, create corresponding PPM record
+  if (input.taskCategory === 'PPM') {
+    const newPPM: PPMSchedule = {
+      id: `PPM-${Math.floor(1000 + Math.random() * 9000)}`,
+      machineId: input.machineId,
+      task: input.taskTitle,
+      intervalDays: 14,
+      frequency: 'Weekly',
+      lastServiced: new Date().toISOString().slice(0, 10),
+      nextDue: input.scheduledDate,
+      status: 'PENDING',
+    };
+    const currentPpm = getLocal<PPMSchedule[]>(STORAGE_KEYS.PPM, SEED_PPM_SCHEDULES);
+    const updatedPpm = [newPPM, ...currentPpm];
+    setLocal(STORAGE_KEYS.PPM, updatedPpm);
+    notifyLocal('ppm', updatedPpm);
+
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('ppm_schedules').insert(newPPM);
+      } catch (e) {
+        console.error('Supabase assignMechanicTask PPM insert error:', e);
+      }
+    }
+  }
+
+  return ticketId;
+}
+
 /* ======================================================================
    PREVENTIVE MAINTENANCE (PPM) SERVICE
    ====================================================================== */
@@ -791,7 +908,7 @@ export async function updateRequisitionStatus(
     SEED_REQUISITIONS
   );
   const updated = currentReqs.map((r) =>
-    r.id === reqId ? { ...r, status, reviewerNotes: reviewerNotes || r.reviewerNotes } : r
+    r.id === reqId ? { ...r, status, reviewNotes: reviewerNotes || r.reviewNotes } : r
   );
   setLocal(STORAGE_KEYS.REQUISITIONS, updated);
   notifyLocal('requisitions', updated);
@@ -825,3 +942,78 @@ export async function rejectRequisition(
   const finalNotes = "Rejected by " + reviewerName + ": " + notes;
   await updateRequisitionStatus(reqId, 'REJECTED', finalNotes);
 }
+
+export async function fulfillMonthlyIndent(
+  id: string,
+  storePersonName: string = 'M. Arumugam (Stores In-Charge)',
+  storeNotes: string = 'Inward shipment received into crib and verified against QC pass',
+  actionType: 'RECEIVE_INTO_CRIB' | 'DISPATCH_TO_LINE' = 'RECEIVE_INTO_CRIB'
+): Promise<void> {
+  const currentReqs = getLocal<PartRequisition[]>(
+    STORAGE_KEYS.REQUISITIONS,
+    SEED_REQUISITIONS
+  );
+
+  const targetReq = currentReqs.find((r) => r.id === id);
+  if (!targetReq) return;
+
+  const newStatus = actionType === 'DISPATCH_TO_LINE' ? 'FULFILLED' : 'ORDERED';
+
+  const updatedReqs = currentReqs.map((r) =>
+    r.id === id
+      ? {
+          ...r,
+          status: newStatus as RequisitionStatus,
+          assignedStorePerson: storePersonName,
+          fulfilledAt: new Date().toISOString(),
+          storeNotes,
+        }
+      : r
+  );
+
+  setLocal(STORAGE_KEYS.REQUISITIONS, updatedReqs);
+  notifyLocal('requisitions', updatedReqs);
+
+  // If receiving into crib, update part stocks for each item in the indent
+  if (actionType === 'RECEIVE_INTO_CRIB' && targetReq.items && targetReq.items.length > 0) {
+    const currentParts = getLocal<SparePart[]>(STORAGE_KEYS.PARTS, SEED_PARTS);
+    const updatedParts = currentParts.map((p) => {
+      const match = targetReq.items?.find((item) => item.partId === p.partId);
+      if (match) {
+        return { ...p, stock: p.stock + match.quantity };
+      }
+      return p;
+    });
+    setLocal(STORAGE_KEYS.PARTS, updatedParts);
+    notifyLocal('parts', updatedParts);
+
+    if (isSupabaseConfigured) {
+      try {
+        for (const item of targetReq.items) {
+          const partDoc = currentParts.find((p) => p.partId === item.partId);
+          if (partDoc) {
+            await supabase.from('spare_parts').update({
+              stock: partDoc.stock + item.quantity,
+            }).eq('partId', item.partId);
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase stock intake warning:', err);
+      }
+    }
+  }
+
+  if (isSupabaseConfigured) {
+    try {
+      await supabase.from('requisitions').update({
+        status: newStatus,
+        assigned_store_person: storePersonName,
+        fulfilled_at: new Date().toISOString(),
+        store_notes: storeNotes,
+      }).eq('id', id);
+    } catch (err) {
+      console.error('Supabase fulfillMonthlyIndent error:', err);
+    }
+  }
+}
+

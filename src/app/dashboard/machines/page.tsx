@@ -10,15 +10,14 @@ import {
   FileText,
   Camera,
   Info,
-  Search,
   CheckCircle,
   AlertOctagon,
   ArrowRight,
-  Filter,
   LayoutGrid,
   Armchair,
   Zap,
   Truck,
+  ChevronDown,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Machine, MachineType, MotorType, FloorLine, MachineStatus, AssetCategory } from '@/types/cmms';
@@ -50,7 +49,7 @@ const SAMPLE_ASSETS = [
     label: 'Yamato 4-Thread Overlock Machine',
   },
   {
-    category: 'TABLE' as AssetCategory,
+    category: 'FURNITURE' as AssetCategory,
     idPrefix: 'TBL-CUT-',
     brand: 'Eastman',
     type: 'TABLE_CUTTING' as MachineType,
@@ -64,7 +63,7 @@ const SAMPLE_ASSETS = [
     label: 'Eastman Air-Float Fabric Spreading Table',
   },
   {
-    category: 'CHAIR' as AssetCategory,
+    category: 'FURNITURE' as AssetCategory,
     idPrefix: 'CHR-OPR-',
     brand: 'Featherlite',
     type: 'CHAIR_OPERATOR' as MachineType,
@@ -122,11 +121,6 @@ export default function MachinesPage() {
   const [mMotor, setMMotor] = useState<MotorType>('SERVO');
   const [mLine, setMLine] = useState<FloorLine>('Line 01');
   const [mStation, setMStation] = useState('Station 04');
-
-  // Search & Filters for Assets Table
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterLine, setFilterLine] = useState<string>('ALL');
-  const [filterCategory, setFilterCategory] = useState<string>('ALL');
 
   // Scanner modal state
   const [isScanModalOpen, setIsScanModalOpen] = useState(false);
@@ -194,6 +188,25 @@ export default function MachinesPage() {
     return [...std, ...customs];
   }, [currentCategoryDef, customSubtypes, selectedCategory]);
 
+  // Group subtypes for FURNITURE (Work Tables vs Chairs vs Custom)
+  const furnitureGroups = useMemo(() => {
+    if (selectedCategory !== 'FURNITURE') return null;
+    const tables = allSubtypesForCategory.filter(
+      (s) => s.id.startsWith('TABLE_') || s.idPrefix.startsWith('TBL-')
+    );
+    const chairs = allSubtypesForCategory.filter(
+      (s) => s.id.startsWith('CHAIR_') || s.idPrefix.startsWith('CHR-')
+    );
+    const others = allSubtypesForCategory.filter(
+      (s) =>
+        !s.id.startsWith('TABLE_') &&
+        !s.idPrefix.startsWith('TBL-') &&
+        !s.id.startsWith('CHAIR_') &&
+        !s.idPrefix.startsWith('CHR-')
+    );
+    return { tables, chairs, others };
+  }, [selectedCategory, allSubtypesForCategory]);
+
   // Available brands for the current subtype or category (combines OEM catalog + custom brands)
   const availableBrands: string[] = useMemo(() => {
     const subDef =
@@ -229,12 +242,16 @@ export default function MachinesPage() {
     if (type === '__CUSTOM_TYPE__') {
       setIsCustomType(true);
       const prefix =
-        selectedCategory === 'CHAIR'
+        selectedCategory === 'FURNITURE'
+          ? 'FUR-CST-'
+          : selectedCategory === 'CHAIR'
           ? 'CHR-CST-'
           : selectedCategory === 'TABLE'
           ? 'TBL-CST-'
           : selectedCategory === 'UTILITY'
           ? 'UTL-CST-'
+          : selectedCategory === 'VEHICLE'
+          ? 'VHC-CST-'
           : 'MC-CST-';
       const rnd = Math.floor(100 + Math.random() * 900);
       setMId(`${prefix}${rnd}`);
@@ -314,12 +331,16 @@ export default function MachinesPage() {
       finalSpecs = customSpecs.trim() || 'Custom factory specification';
       const customId = `CUSTOM_${selectedCategory}_${Date.now()}`;
       const prefix =
-        selectedCategory === 'CHAIR'
+        selectedCategory === 'FURNITURE'
+          ? 'FUR-CST-'
+          : selectedCategory === 'CHAIR'
           ? 'CHR-CST-'
           : selectedCategory === 'TABLE'
           ? 'TBL-CST-'
           : selectedCategory === 'UTILITY'
           ? 'UTL-CST-'
+          : selectedCategory === 'VEHICLE'
+          ? 'VHC-CST-'
           : 'MC-CST-';
 
       const newDef: AssetSubtypeDef = {
@@ -380,23 +401,6 @@ export default function MachinesPage() {
     }
   };
 
-  // Handler to load any asset into the preview card
-  const handleSelectForPreview = (m: Machine) => {
-    const cat = m.category || getAssetCategoryForType(m.type);
-    setSelectedCategory(cat);
-    setIsCustomType(false);
-    setIsCustomBrand(false);
-    setMId(m.id);
-    setMBrand(m.brand);
-    setMType(m.type);
-    setMModel(m.model);
-    setMDate(m.purchaseDate || '2023-01-01');
-    setMCost(m.cost || 5000);
-    setMMotor(m.motorType || 'SERVO');
-    setMLine(m.currentLine);
-    setMStation(m.stationNo);
-    showToast(`Loaded ${m.id} (${m.brand} ${m.model}) for QR preview and editing`, 'info');
-  };
 
   // Construct current active asset object for document preview & printing
   const currentMachineObj: Machine = useMemo(() => {
@@ -511,43 +515,6 @@ export default function MachinesPage() {
     customSubtypes,
   ]);
 
-  // Counts by category
-  const categoryCounts = useMemo(() => {
-    const counts = { ALL: machines.length, MACHINE: 0, TABLE: 0, CHAIR: 0, VEHICLE: 0, UTILITY: 0 };
-    machines.forEach((m) => {
-      const cat = m.category || getAssetCategoryForType(m.type);
-      if (cat === 'TABLE') counts.TABLE++;
-      else if (cat === 'CHAIR') counts.CHAIR++;
-      else if (cat === 'VEHICLE') counts.VEHICLE++;
-      else if (cat === 'UTILITY' || cat === 'LIGHT' || cat === 'FAN') counts.UTILITY++;
-      else counts.MACHINE++;
-    });
-    return counts;
-  }, [machines]);
-
-  // Filtered assets table
-  const filteredMachines = useMemo(() => {
-    return machines.filter((m) => {
-      const cat = m.category || getAssetCategoryForType(m.type);
-      const matchesCategory =
-        filterCategory === 'ALL'
-          ? true
-          : filterCategory === 'UTILITY'
-          ? cat === 'UTILITY' || cat === 'LIGHT' || cat === 'FAN'
-          : cat === filterCategory;
-
-      const matchesSearch =
-        m.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (m.typeName && m.typeName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        m.currentLine.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (m.stationNo && m.stationNo.toLowerCase().includes(searchQuery.toLowerCase()));
-
-      const matchesLine = filterLine === 'ALL' || m.currentLine === filterLine;
-      return matchesCategory && matchesSearch && matchesLine;
-    });
-  }, [machines, searchQuery, filterLine, filterCategory]);
 
   return (
     <div className="space-y-6">
@@ -583,53 +550,46 @@ export default function MachinesPage() {
           </h3>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Asset Category Selection Tabs */}
+            {/* Factory Asset Category Dropdown */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Factory Asset Category *
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-                {ASSET_CATEGORIES.map((cat) => {
-                  const isSelected = selectedCategory === cat.id;
-                  return (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => handleCategorySelect(cat.id)}
-                      className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
-                        isSelected
-                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs ring-2 ring-indigo-500/20'
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5 font-bold text-xs">
-                        {cat.id === 'MACHINE' && (
-                          <Wrench className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-indigo-600'}`} />
-                        )}
-                        {cat.id === 'TABLE' && (
-                          <LayoutGrid className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-emerald-600'}`} />
-                        )}
-                        {cat.id === 'CHAIR' && (
-                          <Armchair className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-purple-600'}`} />
-                        )}
-                        {cat.id === 'VEHICLE' && (
-                          <Truck className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-stone-600'}`} />
-                        )}
-                        {cat.id === 'UTILITY' && (
-                          <Zap className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-cyan-600'}`} />
-                        )}
-                        <span>{cat.singular}</span>
-                      </div>
-                      <div
-                        className={`text-[10px] font-medium mt-1 truncate ${
-                          isSelected ? 'text-indigo-100' : 'text-slate-500'
-                        }`}
-                      >
-                        {cat.subtypes.length} Varieties
-                      </div>
-                    </button>
-                  );
-                })}
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Factory Asset Category *</span>
+                </label>
+                <span className="text-[11px] font-semibold text-slate-500">
+                  {currentCategoryDef.subtypes.length} Standard Varieties
+                </span>
+              </div>
+              <div className="relative">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => handleCategorySelect(e.target.value as AssetCategory)}
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none text-slate-900 font-bold appearance-none cursor-pointer transition shadow-xs pr-10"
+                >
+                  {ASSET_CATEGORIES.map((cat) => (
+                    <option key={cat.id} value={cat.id} className="text-slate-800 py-1 font-bold">
+                      {cat.id === 'MACHINE' && '🧵 '}
+                      {cat.id === 'FURNITURE' && '🪑 '}
+                      {cat.id === 'VEHICLE' && '🚜 '}
+                      {cat.id === 'UTILITY' && '⚡ '}
+                      {cat.name} ({cat.singular})
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-500">
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-1.5 flex items-center gap-2 text-[11px] text-slate-500">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  {selectedCategory === 'MACHINE' && 'Industrial Machinery'}
+                  {selectedCategory === 'FURNITURE' && 'Work Tables & Seating'}
+                  {selectedCategory === 'VEHICLE' && 'Material Transport'}
+                  {selectedCategory === 'UTILITY' && 'Plant Infrastructure'}
+                </span>
+                <span>•</span>
+                <span className="truncate">{currentCategoryDef.description}</span>
               </div>
             </div>
 
@@ -672,13 +632,41 @@ export default function MachinesPage() {
                       onChange={(e) => handleSubtypeChange(e.target.value as MachineType)}
                       className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none text-slate-800 font-bold"
                     >
-                      <optgroup label={`Standard ${currentCategoryDef.singular} Models`}>
-                        {allSubtypesForCategory.map((sub) => (
-                          <option key={sub.id} value={sub.id}>
-                            {sub.name}
-                          </option>
-                        ))}
-                      </optgroup>
+                      {selectedCategory === 'FURNITURE' && furnitureGroups ? (
+                        <>
+                          <optgroup label="📋 Work Tables & Workstations">
+                            {furnitureGroups.tables.map((sub) => (
+                              <option key={sub.id} value={sub.id}>
+                                {sub.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="💺 Chairs & Floor Seating">
+                            {furnitureGroups.chairs.map((sub) => (
+                              <option key={sub.id} value={sub.id}>
+                                {sub.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                          {furnitureGroups.others.length > 0 && (
+                            <optgroup label="🛠️ Other Furniture Models">
+                              {furnitureGroups.others.map((sub) => (
+                                <option key={sub.id} value={sub.id}>
+                                  {sub.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
+                        </>
+                      ) : (
+                        <optgroup label={`Standard ${currentCategoryDef.singular} Models`}>
+                          {allSubtypesForCategory.map((sub) => (
+                            <option key={sub.id} value={sub.id}>
+                              {sub.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
                       <option value="__CUSTOM_TYPE__" className="text-indigo-600 font-bold">
                         ✨ + Add New / Custom {currentCategoryDef.singular} Type...
                       </option>
@@ -693,7 +681,7 @@ export default function MachinesPage() {
                   <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-2">
                     <div>
                       <label className="block text-[10px] font-bold uppercase text-indigo-900 mb-0.5">
-                        New Variety / Chair Model Name *
+                        New Variety / Model Name *
                       </label>
                       <input
                         type="text"
@@ -701,12 +689,16 @@ export default function MachinesPage() {
                         value={customTypeName}
                         onChange={(e) => setCustomTypeName(e.target.value)}
                         placeholder={
-                          selectedCategory === 'CHAIR'
+                          selectedCategory === 'FURNITURE'
+                            ? 'e.g. Ergonomic Drafting Chair or Cutting Table'
+                            : selectedCategory === 'CHAIR'
                             ? 'e.g. Drafting Stool with Foot Ring'
                             : selectedCategory === 'TABLE'
                             ? 'e.g. Fabric Layout & Spreading Bench'
                             : selectedCategory === 'UTILITY'
                             ? 'e.g. Task Gooseneck LED 15W'
+                            : selectedCategory === 'VEHICLE'
+                            ? 'e.g. Electric Forklift or Pallet Jack'
                             : 'e.g. Multi-Needle Smocking Machine'
                         }
                         className="w-full px-3 py-1.5 text-xs bg-white border border-indigo-300 rounded-lg text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -1081,246 +1073,6 @@ export default function MachinesPage() {
         </div>
       </div>
 
-      {/* Registered Factory Assets Data Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4 no-print">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-              Registered Factory Assets ({machines.length} Total Units)
-            </h3>
-            <p className="text-xs text-slate-500">
-              Select any asset to load specifications into the tag generator or preview quick actions.
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <div className="relative w-full sm:w-60">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search asset ID, make, line..."
-                className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800"
-              />
-            </div>
-
-            <select
-              value={filterLine}
-              onChange={(e) => setFilterLine(e.target.value)}
-              className="text-xs bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 font-medium"
-            >
-              <option value="ALL">All Factory Locations</option>
-              <option value="Line 01">Sewing - Line 01</option>
-              <option value="Line 02">Sewing - Line 02</option>
-              <option value="Line 03">Sewing - Line 03</option>
-              <option value="Line 04">Sewing - Line 04</option>
-              <option value="Cutting Department">Cutting Dept</option>
-              <option value="Finishing & Pressing">Finishing &amp; Pressing</option>
-              <option value="Embroidery & Printing">Embroidery &amp; Printing</option>
-              <option value="Quality & Packing">Quality &amp; Packing</option>
-              <option value="Warehouse & Storage">Warehouse &amp; Storage</option>
-              <option value="Central Utilities & Plant">Utilities &amp; Plant</option>
-              <option value="Maintenance Workshop">Maintenance Workshop</option>
-              <option value="Scrap Bay">Scrap Bay</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Category Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100">
-          <button
-            type="button"
-            onClick={() => setFilterCategory('ALL')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-              filterCategory === 'ALL'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            <span>All Assets</span>
-            <span className="text-[10px] opacity-75 font-mono">({categoryCounts.ALL})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilterCategory('MACHINE')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-              filterCategory === 'MACHINE'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
-            }`}
-          >
-            <Wrench className="w-3 h-3" />
-            <span>Machinery</span>
-            <span className="text-[10px] opacity-75 font-mono">({categoryCounts.MACHINE})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilterCategory('TABLE')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-              filterCategory === 'TABLE'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-            }`}
-          >
-            <LayoutGrid className="w-3 h-3" />
-            <span>Tables</span>
-            <span className="text-[10px] opacity-75 font-mono">({categoryCounts.TABLE})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilterCategory('CHAIR')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-              filterCategory === 'CHAIR'
-                ? 'bg-purple-600 text-white shadow-xs'
-                : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
-            }`}
-          >
-            <Armchair className="w-3 h-3" />
-            <span>Chairs &amp; Seating</span>
-            <span className="text-[10px] opacity-75 font-mono">({categoryCounts.CHAIR})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilterCategory('VEHICLE')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-              filterCategory === 'VEHICLE'
-                ? 'bg-stone-600 text-white shadow-xs'
-                : 'bg-stone-50 text-stone-700 hover:bg-stone-100'
-            }`}
-          >
-            <Truck className="w-3 h-3" />
-            <span>Vehicles &amp; Transport</span>
-            <span className="text-[10px] opacity-75 font-mono">({categoryCounts.VEHICLE})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilterCategory('UTILITY')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-              filterCategory === 'UTILITY'
-                ? 'bg-cyan-600 text-white shadow-xs'
-                : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'
-            }`}
-          >
-            <Zap className="w-3 h-3" />
-            <span>Utilities &amp; Lighting</span>
-            <span className="text-[10px] opacity-75 font-mono">({categoryCounts.UTILITY})</span>
-          </button>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-600">
-            <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
-              <tr>
-                <th className="py-3 px-4">Asset ID</th>
-                <th className="py-3 px-4">Category</th>
-                <th className="py-3 px-4">Make / Model</th>
-                <th className="py-3 px-4">Subtype Spec</th>
-                <th className="py-3 px-4">Location</th>
-                <th className="py-3 px-4">Station / Bay</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Age</th>
-                <th className="py-3 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-medium">
-              {filteredMachines.map((m) => {
-                const isDown = m.status === 'BREAKDOWN';
-                const isBuffer = m.status === 'BUFFER';
-                const cat = m.category || getAssetCategoryForType(m.type);
-
-                return (
-                  <tr
-                    key={m.id}
-                    className="hover:bg-slate-50/80 transition cursor-pointer"
-                    onClick={() => handleSelectForPreview(m)}
-                  >
-                    <td className="py-3 px-4 font-mono font-bold text-slate-900">{m.id}</td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                          cat === 'TABLE'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : cat === 'CHAIR'
-                            ? 'bg-purple-50 text-purple-700 border-purple-200'
-                            : cat === 'UTILITY' || cat === 'LIGHT' || cat === 'FAN'
-                            ? 'bg-cyan-50 text-cyan-700 border-cyan-200'
-                            : 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                        }`}
-                      >
-                        {cat === 'TABLE' && <LayoutGrid className="w-2.5 h-2.5" />}
-                        {cat === 'CHAIR' && <Armchair className="w-2.5 h-2.5" />}
-                        {(cat === 'UTILITY' || cat === 'LIGHT' || cat === 'FAN') && (
-                          <Zap className="w-2.5 h-2.5" />
-                        )}
-                        {cat === 'MACHINE' && <Wrench className="w-2.5 h-2.5" />}
-                        <span>{cat}</span>
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="font-bold text-slate-800">{m.brand}</span>{' '}
-                      <span className="text-slate-500">{m.model}</span>
-                    </td>
-                    <td className="py-3 px-4 text-slate-700">
-                      {m.typeName || ASSET_SUBTYPE_LOOKUP[m.type]?.name || m.type}
-                    </td>
-                    <td className="py-3 px-4 font-semibold text-slate-800">{m.currentLine}</td>
-                    <td className="py-3 px-4 text-slate-600">{m.stationNo}</td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          isDown
-                            ? 'bg-rose-100 text-rose-700 border border-rose-200 urgent-pulse'
-                            : isBuffer
-                            ? 'bg-amber-100 text-amber-700 border border-amber-200'
-                            : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                        }`}
-                      >
-                        {m.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-slate-600 font-mono">
-                      {m.ageYears ? `${m.ageYears} yrs` : 'New'}
-                    </td>
-                    <td
-                      className="py-3 px-4 text-right space-x-1.5"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        onClick={() => handleSelectForPreview(m)}
-                        className="px-2.5 py-1 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition"
-                      >
-                        Preview Tag
-                      </button>
-                      <button
-                        onClick={() => {
-                          setPrintModalMachine(m);
-                          setPrintModalMode('TAG');
-                          setIsPrintModalOpen(true);
-                        }}
-                        className="px-2.5 py-1 text-[11px] bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg transition"
-                        title="Print QR Tag or Equipment Document"
-                      >
-                        Print Tag / Doc
-                      </button>
-                      <button
-                        onClick={() => {
-                          setScanModalTargetId(m.id);
-                          setIsScanModalOpen(true);
-                        }}
-                        className="px-2.5 py-1 text-[11px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold rounded-lg transition"
-                      >
-                        Simulate Scan
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       {/* Reusable Scan Modal */}
       <ScanModal
         isOpen={isScanModalOpen}
@@ -1334,7 +1086,7 @@ export default function MachinesPage() {
           isOpen={isPrintModalOpen}
           onClose={() => setIsPrintModalOpen(false)}
           asset={printModalMachine}
-          allAssets={filteredMachines}
+          allAssets={machines}
           initialMode={printModalMode}
         />
       )}

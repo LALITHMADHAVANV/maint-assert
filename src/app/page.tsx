@@ -97,29 +97,22 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(99,102,241,0.25),rgba(255,255,255,0))]">
-      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
+    <div className="min-h-screen bg-slate-100/70 flex flex-col items-center justify-center p-4 py-8 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(99,102,241,0.15),rgba(241,245,249,0.9))]">
+      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200">
         {/* Header Banner */}
-        <div className="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 p-8 text-white text-center border-b border-indigo-950">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600/30 border border-indigo-400/40 text-indigo-400 mb-3 shadow-inner">
+        <div className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-800 p-6 sm:p-8 text-white text-center border-b border-indigo-500/30">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/15 border border-white/25 text-white mb-3 shadow-inner">
             <Wrench className="w-7 h-7" />
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight">TexTech Garments</h1>
-          <p className="text-xs uppercase tracking-widest text-indigo-300 font-semibold mt-1">
-            Plant Maintenance & Asset Management
+          <p className="text-xs uppercase tracking-widest text-indigo-100 font-semibold mt-1">
+            Plant Maintenance & Asset Management (CMMS)
           </p>
         </div>
 
         {/* Form Container */}
-        <div className="p-8 space-y-6">
-          <div className="space-y-1">
-            <h2 className="text-lg font-bold text-slate-900">Sign In</h2>
-            <p className="text-xs text-slate-500">
-              Enter your credentials to access the CMMS portal
-            </p>
-          </div>
-
-          <form onSubmit={handleFormLogin} className="space-y-5">
+        <div className="p-6 sm:p-8 space-y-6">
+          <form onSubmit={handleFormLogin} className="space-y-4">
             {/* Login / Email Input */}
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
@@ -134,7 +127,7 @@ export default function LoginPage() {
                   value={emailOrId}
                   onChange={(e) => setEmailOrId(e.target.value)}
                   className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition text-slate-800"
-                  placeholder="e.g. employee@textech.garments or ADM-01"
+                  placeholder="e.g. admin@textech.garments, ceo, MEC-01"
                   autoComplete="username"
                   disabled={isLoading}
                 />
@@ -155,7 +148,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition text-slate-800"
-                  placeholder="Enter your password"
+                  placeholder="Enter your password (e.g. password123)"
                   autoComplete="current-password"
                   disabled={isLoading}
                 />
@@ -195,7 +188,7 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 text-center">
           <p className="text-[11px] text-slate-400">
-            Garment Manufacturing Plant 03 • Coimbatore Unit
+            Garment Manufacturing Plant 03 • Coimbatore Unit • All role accounts verified
           </p>
         </div>
       </div>

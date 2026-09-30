@@ -39,7 +39,7 @@ export default function StoreInboxPage() {
   const [notes, setNotes] = useState('');
   const [challanNo, setChallanNo] = useState('');
 
-  const isStorePersonOrAdmin = role === 'STORE_PERSON' || role === 'ADMIN' || role === 'ASSET_MANAGER';
+  const isStorePerson = role === 'STORE_PERSON';
 
   useEffect(() => {
     const unsubReqs = subscribeRequisitions((reqs) => {
@@ -148,14 +148,14 @@ export default function StoreInboxPage() {
       </div>
 
       {/* Role Authority Advisory Banner */}
-      {!isStorePersonOrAdmin && (
+      {!isStorePerson && (
         <div className="bg-blue-50 border border-blue-300 p-4 rounded-2xl flex items-center justify-between text-xs text-blue-900 shadow-xs">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-blue-200 text-blue-800 flex items-center justify-center font-bold shrink-0">
               <Package className="w-4 h-4" />
             </div>
             <div>
-              <span className="font-bold">Store Person Custody Only:</span> You are viewing the Monthly Store Indents in read-only mode as <span className="font-mono font-bold uppercase">{role || 'GUEST'}</span>. Only <strong>Store Person M. Arumugam</strong> or <strong>Plant Admin</strong> has authority to receive inward stock and dispatch parts to sewing lines.
+              <span className="font-bold">Store Person Custody Only:</span> You are viewing the Monthly Store Indents in read-only mode as <span className="font-mono font-bold uppercase">{role || 'GUEST'}</span>. Only <strong>Store Person M. Arumugam</strong> has authority to receive inward stock and dispatch parts to sewing lines.
             </div>
           </div>
         </div>
@@ -348,7 +348,7 @@ export default function StoreInboxPage() {
 
                     {/* Store Keeper Actions */}
                     <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center gap-2">
-                      {isStorePersonOrAdmin ? (
+                      {isStorePerson ? (
                         <>
                           {!isOrdered && !isFulfilled && (
                             <button

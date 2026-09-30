@@ -1,6 +1,6 @@
 # TexTech CMMS — Garment Factory Maintenance & Asset Management Suite
 
-A modern, production-grade Computerized Maintenance Management System (CMMS) designed for apparel manufacturing sewing floors. Built with **Next.js 16 (App Router, React 19, TypeScript)**, **Tailwind CSS v4**, **Lucide Icons**, and **Firebase (Cloud Firestore & Authentication)** with a zero-configuration reactive offline demo fallback.
+A modern, production-grade Computerized Maintenance Management System (CMMS) designed for apparel manufacturing sewing floors. Built with **Next.js 16 (App Router, React 19, TypeScript)**, **Tailwind CSS v4**, **Lucide Icons**, and **Supabase (PostgreSQL & Authentication)** with a zero-configuration reactive offline demo fallback.
 
 ---
 
@@ -42,15 +42,15 @@ A modern, production-grade Computerized Maintenance Management System (CMMS) des
 
 - **Framework:** Next.js 16.3.5 (Turbopack, App Router)
 - **Frontend:** React 19, TypeScript, Tailwind CSS v4, Lucide React
-- **Backend / Database:** Firebase JS SDK v12 (Cloud Firestore, Firebase Authentication)
+- **Backend / Database:** Supabase (`@supabase/supabase-js`, PostgreSQL, Supabase Auth)
 - **QR Code Tooling:** `qrcode.react` (generation) & `html5-qrcode` (camera scanning)
 - **Date Utilities:** `date-fns`
 
 ---
 
-## Database Architecture (6 Separate Firestore Collections)
+## Database Architecture (PostgreSQL Tables via Supabase)
 
-| Table / Collection | Description | Primary Document ID |
+| Table / Relation | Description | Primary Key / Document ID |
 |---|---|---|
 | `users` | Mechanics, Plant Managers, System Admins | User UID (`MEC-08`, `MGR-01`) |
 | `machines` | 12 factory sewing machines across production lines | Machine Tag (`MC-SNLS-101`) |
@@ -70,29 +70,29 @@ cd maint-assert-module
 npm install --ignore-scripts
 ```
 
-### 2. Configure Firebase Environment
+### 2. Configure Environment
 Copy the example environment file:
 ```bash
-cp .env.example .env
+cp .env.example .env.local
 ```
-Fill in your Firebase credentials from **Firebase Console > Project Settings > General > Web App**:
+Fill in your Supabase credentials:
 ```env
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSy...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-app.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-app
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-app.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=1234567890
-NEXT_PUBLIC_FIREBASE_APP_ID=1:1234567890:web:abcdef
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-> **Note:** If real Firebase credentials are not provided, the system automatically falls back to an offline reactive local storage mode so all features can be tested immediately without database setup.
+> **Note:** If real Supabase credentials are not provided, the system automatically falls back to an offline reactive local storage mode so all features can be tested immediately without database setup.
 
-### 3. Populate Firestore Tables
-To seed all 6 collections directly into your Cloud Firestore database:
+### 3. Setup Database Schema
+Execute the SQL migration schema in Supabase SQL editor:
+```sql
+supabase/schema.sql
+```
+And seed default users / data:
 ```bash
-npm run seed:firebase
+node scripts/create-users.mjs
 ```
-Or open [http://localhost:3000/api/seed](http://localhost:3000/api/seed) in your browser.
 
 ### 4. Run Development Server
 ```bash

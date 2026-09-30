@@ -424,29 +424,19 @@ export const ASSET_CATEGORIES: AssetCategoryMeta[] = [
     ],
   },
   {
-    id: 'TABLE',
-    name: 'Work, Cutting & Inspection Tables',
-    singular: 'Work Table',
-    description: 'Fabric cutting, sewing workstation, checking and packing tables',
-    iconName: 'LayoutGrid',
+    id: 'FURNITURE',
+    name: 'Furniture & Workstations',
+    singular: 'Furniture',
+    description: 'Work tables, cutting tables, sewing workstations, operator & supervisor chairs, workshop stools',
+    iconName: 'Armchair',
     badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
-    idPrefix: 'TBL-',
+    idPrefix: 'FUR-',
     subtypes: [
-      {
-        id: 'TABLE_CUTTING',
-        name: 'Fabric Spreading & Cutting Table',
-        category: 'TABLE',
-        brands: ['Eastman', 'SteelCraft', 'KM'],
-        defaultBrand: 'Eastman',
-        defaultModel: 'SpreadMaster-12 Air-Flotation',
-        defaultCost: 110000,
-        idPrefix: 'TBL-CUT-',
-        specs: '12ft x 6ft Air-flotation laminated top with end fabric clamps & pneumatic blower table',
-      },
+      // --- Work Tables & Workstations ---
       {
         id: 'TABLE_SEWING',
-        name: 'Sewing Workstation Table',
-        category: 'TABLE',
+        name: 'Sewing Work Table / Workstation',
+        category: 'FURNITURE',
         brands: ['Featherlite', 'Juki', 'Godrej', 'SteelCraft'],
         defaultBrand: 'Featherlite',
         defaultModel: 'StitchDesk-Pro K-Stand',
@@ -455,9 +445,20 @@ export const ASSET_CATEGORIES: AssetCategoryMeta[] = [
         specs: 'Heavy steel K-stand with embedded metric measuring rule, anti-vibration feet & drawer',
       },
       {
+        id: 'TABLE_CUTTING',
+        name: 'Fabric Spreading & Cutting Table',
+        category: 'FURNITURE',
+        brands: ['Eastman', 'SteelCraft', 'KM'],
+        defaultBrand: 'Eastman',
+        defaultModel: 'SpreadMaster-12 Air-Flotation',
+        defaultCost: 110000,
+        idPrefix: 'TBL-CUT-',
+        specs: '12ft x 6ft Air-flotation laminated top with end fabric clamps & pneumatic blower table',
+      },
+      {
         id: 'TABLE_INSPECTION',
         name: 'QC Garment Checking Table',
-        category: 'TABLE',
+        category: 'FURNITURE',
         brands: ['Godrej', 'Featherlite', 'SteelCraft'],
         defaultBrand: 'Godrej',
         defaultModel: 'QC-Pro-800 Canopy Desk',
@@ -468,7 +469,7 @@ export const ASSET_CATEGORIES: AssetCategoryMeta[] = [
       {
         id: 'TABLE_PACKING',
         name: 'Final Folding & Poly-Bagging Table',
-        category: 'TABLE',
+        category: 'FURNITURE',
         brands: ['SteelCraft', 'Godrej'],
         defaultBrand: 'SteelCraft',
         defaultModel: 'PackMaster-Dual Bin',
@@ -479,7 +480,7 @@ export const ASSET_CATEGORIES: AssetCategoryMeta[] = [
       {
         id: 'TABLE_PATTERN',
         name: 'Pattern Drafting & Master Table',
-        category: 'TABLE',
+        category: 'FURNITURE',
         brands: ['Eastman', 'Godrej'],
         defaultBrand: 'Eastman',
         defaultModel: 'DraftCraft-Master Tilt',
@@ -489,8 +490,8 @@ export const ASSET_CATEGORIES: AssetCategoryMeta[] = [
       },
       {
         id: 'TABLE_CUSTOM',
-        name: 'Custom / New Workstation Table',
-        category: 'TABLE',
+        name: 'Custom / New Work Table',
+        category: 'FURNITURE',
         brands: ['Eastman', 'Godrej', 'SteelCraft', 'Custom OEM'],
         defaultBrand: 'Custom OEM',
         defaultModel: 'Custom Work Table',
@@ -498,21 +499,11 @@ export const ASSET_CATEGORIES: AssetCategoryMeta[] = [
         idPrefix: 'TBL-CST-',
         specs: 'Custom factory workstation, layout, or inspection table',
       },
-    ],
-  },
-  {
-    id: 'CHAIR',
-    name: 'Chairs & Floor Seating',
-    singular: 'Chair',
-    description: 'Operator ergonomic chairs, supervisor chairs & workshop stools',
-    iconName: 'Armchair',
-    badgeColor: 'bg-teal-100 text-teal-800 border-teal-200',
-    idPrefix: 'CHR-',
-    subtypes: [
+      // --- Chairs & Floor Seating ---
       {
         id: 'CHAIR_OPERATOR',
         name: 'Ergonomic Sewing Swivel Chair',
-        category: 'CHAIR',
+        category: 'FURNITURE',
         brands: ['Featherlite', 'Godrej', 'Wipro'],
         defaultBrand: 'Featherlite',
         defaultModel: 'Optima-Sewing Swivel 360',
@@ -523,7 +514,7 @@ export const ASSET_CATEGORIES: AssetCategoryMeta[] = [
       {
         id: 'CHAIR_SUPERVISOR',
         name: 'High-Back Supervisor Chair',
-        category: 'CHAIR',
+        category: 'FURNITURE',
         brands: ['Featherlite', 'Godrej'],
         defaultBrand: 'Featherlite',
         defaultModel: 'Exec-Line Lead Mesh',
@@ -534,7 +525,7 @@ export const ASSET_CATEGORIES: AssetCategoryMeta[] = [
       {
         id: 'CHAIR_STOOL',
         name: 'Mechanic Workshop Stool',
-        category: 'CHAIR',
+        category: 'FURNITURE',
         brands: ['SteelCraft', 'Godrej'],
         defaultBrand: 'SteelCraft',
         defaultModel: 'ToolBay-Steel Rolling Stool',
@@ -545,7 +536,7 @@ export const ASSET_CATEGORIES: AssetCategoryMeta[] = [
       {
         id: 'CHAIR_CUSTOM',
         name: 'Custom / New Seating Model',
-        category: 'CHAIR',
+        category: 'FURNITURE',
         brands: ['Featherlite', 'Godrej', 'Wipro', 'Steelcase', 'Custom OEM'],
         defaultBrand: 'Custom OEM',
         defaultModel: 'Custom Seating Spec',
@@ -778,8 +769,7 @@ export function getCategoryForType(type: MachineType): MachineCategoryGroup {
 export function getAssetCategoryForType(type: MachineType): AssetCategory {
   const meta = ASSET_SUBTYPE_LOOKUP[type];
   if (meta) return meta.category;
-  if (type.startsWith('TABLE_')) return 'TABLE';
-  if (type.startsWith('CHAIR_')) return 'CHAIR';
+  if (type.startsWith('TABLE_') || type.startsWith('CHAIR_')) return 'FURNITURE';
   if (type.startsWith('VEHICLE_')) return 'VEHICLE';
   if (type.startsWith('LIGHT_') || type.startsWith('FAN_') || type.startsWith('UTILITY_')) return 'UTILITY';
   return 'MACHINE';

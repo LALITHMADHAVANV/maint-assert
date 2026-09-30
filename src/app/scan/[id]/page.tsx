@@ -32,7 +32,7 @@ export default function MobileScanPage() {
   const machineId = typeof params?.id === 'string' ? decodeURIComponent(params.id) : '';
 
   const { showToast } = useToast();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
 
   const [machine, setMachine] = useState<Machine | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -108,7 +108,13 @@ export default function MobileScanPage() {
         'error'
       );
       setFaultNotes('');
-      router.push('/dashboard/calendar');
+      if (role === 'CEO') {
+        router.push('/dashboard/messages');
+      } else if (role === 'ADMIN' || role === 'ASSET_MANAGER') {
+        router.push('/dashboard/machines');
+      } else {
+        router.push('/dashboard/calendar');
+      }
     } catch (err) {
       showToast('Failed to dispatch breakdown ticket', 'error');
       console.error(err);
@@ -144,10 +150,10 @@ export default function MobileScanPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-slate-50 text-slate-800 flex items-center justify-center p-4">
         <div className="text-center space-y-3">
-          <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm font-semibold text-slate-300">Scanning Asset Tag...</p>
+          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm font-semibold text-slate-600">Scanning Asset Tag...</p>
         </div>
       </div>
     );
@@ -155,21 +161,21 @@ export default function MobileScanPage() {
 
   if (!machine) {
     return (
-      <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-slate-800 rounded-3xl p-6 border border-slate-700 text-center space-y-4">
-          <div className="w-12 h-12 bg-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center mx-auto">
+      <div className="min-h-screen bg-slate-50 text-slate-800 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-3xl p-6 border border-slate-200 shadow-xl text-center space-y-4">
+          <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto border border-rose-200">
             <AlertTriangle className="w-6 h-6" />
           </div>
-          <h2 className="text-lg font-bold">Unrecognized Asset Tag</h2>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Machine tag <code className="bg-slate-900 px-2 py-1 rounded text-amber-300">{machineId}</code> was not found in the factory registry.
+          <h2 className="text-lg font-bold text-slate-900">Unrecognized Asset Tag</h2>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Machine tag <code className="bg-slate-100 px-2 py-1 rounded text-amber-700 font-mono border border-slate-200">{machineId}</code> was not found in the factory registry.
           </p>
           <Link
-            href="/dashboard/machines"
+            href={role === 'CEO' ? '/dashboard/messages' : '/dashboard/machines'}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Return to Machine Registry</span>
+            <span>{role === 'CEO' ? 'Return to CEO Approvals' : 'Return to Machine Registry'}</span>
           </Link>
         </div>
       </div>
@@ -179,45 +185,45 @@ export default function MobileScanPage() {
   const isDown = machine.status === 'BREAKDOWN';
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col p-4 sm:p-6 antialiased selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col p-4 sm:p-6 antialiased selection:bg-indigo-500 selection:text-white">
       {/* Mobile Top Header */}
-      <div className="max-w-lg w-full mx-auto flex items-center justify-between py-3 border-b border-slate-800 mb-4">
+      <div className="max-w-lg w-full mx-auto flex items-center justify-between py-3 border-b border-slate-200 mb-4">
         <Link
-          href="/dashboard/machines"
-          className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5 transition"
+          href={role === 'CEO' ? '/dashboard/messages' : '/dashboard/machines'}
+          className="text-xs text-slate-600 hover:text-slate-900 flex items-center gap-1.5 transition font-semibold"
         >
-          <ArrowLeft className="w-4 h-4" />
-          <span>CMMS Dashboard</span>
+          <ArrowLeft className="w-4 h-4 text-slate-500" />
+          <span>{role === 'CEO' ? 'CEO Approvals' : 'CMMS Dashboard'}</span>
         </Link>
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span className="text-[11px] font-bold text-slate-300">Floor Terminal Live</span>
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+          <span className="text-[11px] font-bold text-slate-700">Floor Terminal Live</span>
         </div>
       </div>
 
       {/* Main Card */}
-      <div className="max-w-lg w-full mx-auto bg-slate-900 rounded-3xl border border-slate-800 shadow-2xl overflow-hidden">
+      <div className="max-w-lg w-full mx-auto bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
         {/* Machine Identity Banner */}
-        <div className="p-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-b border-slate-800 relative">
+        <div className="p-6 bg-gradient-to-br from-indigo-50/70 via-white to-slate-50 border-b border-slate-200 relative">
           <div className="flex items-start justify-between">
             <div>
-              <div className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-400">
+              <div className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600">
                 SCANNED ASSET
               </div>
-              <h1 className="text-2xl font-extrabold font-mono text-white mt-0.5 tracking-tight">
+              <h1 className="text-2xl font-extrabold font-mono text-slate-900 mt-0.5 tracking-tight">
                 {machine.id}
               </h1>
-              <p className="text-sm font-bold text-indigo-300 mt-0.5">
+              <p className="text-sm font-bold text-indigo-700 mt-0.5">
                 {machine.brand} • {machine.model}
               </p>
             </div>
             <span
               className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                 isDown
-                  ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 urgent-pulse'
+                  ? 'bg-rose-50 text-rose-700 border border-rose-200 urgent-pulse'
                   : machine.status === 'BUFFER'
-                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                  : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                  : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
               }`}
             >
               {machine.status}
@@ -226,30 +232,30 @@ export default function MobileScanPage() {
 
           {/* Machine specs strip */}
           <div className="grid grid-cols-2 gap-2 mt-4 text-xs">
-            <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 block font-medium">Class / Type</span>
-              <span className="font-semibold text-slate-200 truncate block">
+            <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+              <span className="text-[10px] text-slate-500 block font-medium">Class / Type</span>
+              <span className="font-semibold text-slate-800 truncate block">
                 {machine.typeName || machine.type}
               </span>
             </div>
-            <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 block font-medium">Current Line</span>
-              <span className="font-semibold text-emerald-400 flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-emerald-400" />
+            <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+              <span className="text-[10px] text-slate-500 block font-medium">Current Line</span>
+              <span className="font-semibold text-emerald-700 flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-emerald-600" />
                 {machine.currentLine} ({machine.stationNo})
               </span>
             </div>
           </div>
 
           {machine.previousLine && (
-            <div className="mt-2.5 p-2 rounded-xl bg-indigo-950/40 border border-indigo-800/60 text-[11px] flex items-center justify-between text-indigo-300">
+            <div className="mt-2.5 p-2 rounded-xl bg-indigo-50/80 border border-indigo-200 text-[11px] flex items-center justify-between text-indigo-900">
               <div className="flex items-center gap-1.5 truncate">
-                <ArrowRightLeft className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                <span className="text-slate-400">Held before:</span>
-                <span className="font-semibold text-white truncate">{machine.previousLine} ({machine.previousStation || 'Station'})</span>
+                <ArrowRightLeft className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                <span className="text-slate-600">Held before:</span>
+                <span className="font-semibold text-slate-900 truncate">{machine.previousLine} ({machine.previousStation || 'Station'})</span>
               </div>
               {machine.lastMovedAt && (
-                <span className="text-[10px] text-slate-400 shrink-0 ml-2 font-mono">
+                <span className="text-[10px] text-slate-500 shrink-0 ml-2 font-mono">
                   {new Date(machine.lastMovedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                 </span>
               )}
@@ -258,29 +264,29 @@ export default function MobileScanPage() {
         </div>
 
         {/* Action Tabs: Report vs Relocate */}
-        <div className="flex border-b border-slate-800 text-xs font-bold bg-slate-900/90">
+        <div className="flex border-b border-slate-200 text-xs font-bold bg-slate-50">
           <button
             type="button"
             onClick={() => setActiveTab('report')}
-            className={`flex-1 py-3.5 text-center border-b-2 transition flex items-center justify-center gap-2 ${
+            className={`flex-1 py-3.5 text-center border-b-2 transition flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'report'
-                ? 'border-rose-500 text-rose-400 bg-rose-500/10'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'border-rose-600 text-rose-700 bg-rose-50/60 font-extrabold'
+                : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100'
             }`}
           >
-            <AlertTriangle className="w-4 h-4 text-rose-500" />
+            <AlertTriangle className="w-4 h-4 text-rose-600" />
             <span>1. Report Breakdown</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('relocate')}
-            className={`flex-1 py-3.5 text-center border-b-2 transition flex items-center justify-center gap-2 ${
+            className={`flex-1 py-3.5 text-center border-b-2 transition flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'relocate'
-                ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'border-indigo-600 text-indigo-700 bg-indigo-50/60 font-extrabold'
+                : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100'
             }`}
           >
-            <ArrowRightLeft className="w-4 h-4 text-indigo-400" />
+            <ArrowRightLeft className="w-4 h-4 text-indigo-600" />
             <span>2. Relocate Asset</span>
           </button>
         </div>
@@ -290,14 +296,14 @@ export default function MobileScanPage() {
           {activeTab === 'report' ? (
             <form onSubmit={handleBreakdownSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                   Specific Asset Defect / Breakdown *
                 </label>
                 <select
                   value={faultType}
                   onChange={(e) => setFaultType(e.target.value)}
                   required
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-800 border border-slate-700 rounded-xl focus:ring-2 focus:ring-rose-500 text-slate-100 outline-none font-medium"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 text-slate-800 outline-none font-medium focus:bg-white transition"
                 >
                   {machine.category === 'TABLE' ? (
                     <>
@@ -382,15 +388,15 @@ export default function MobileScanPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                   Severity / Line Impact *
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <label
                     className={`flex items-center p-3 rounded-xl border text-xs font-bold cursor-pointer transition ${
                       urgency === 'CRITICAL'
-                        ? 'border-rose-500 bg-rose-500/20 text-rose-300 ring-2 ring-rose-500'
-                        : 'border-slate-800 bg-slate-800/60 text-slate-400'
+                        ? 'border-rose-500 bg-rose-50 text-rose-700 ring-2 ring-rose-500'
+                        : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
                     }`}
                   >
                     <input
@@ -398,15 +404,15 @@ export default function MobileScanPage() {
                       name="urgency"
                       checked={urgency === 'CRITICAL'}
                       onChange={() => setUrgency('CRITICAL')}
-                      className="mr-2 text-rose-500"
+                      className="mr-2 text-rose-600"
                     />
                     <span>Critical (Line Stopped)</span>
                   </label>
                   <label
                     className={`flex items-center p-3 rounded-xl border text-xs font-bold cursor-pointer transition ${
                       urgency === 'WARNING'
-                        ? 'border-amber-500 bg-amber-500/20 text-amber-300 ring-2 ring-amber-500'
-                        : 'border-slate-800 bg-slate-800/60 text-slate-400'
+                        ? 'border-amber-500 bg-amber-50 text-amber-700 ring-2 ring-amber-500'
+                        : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
                     }`}
                   >
                     <input
@@ -414,7 +420,7 @@ export default function MobileScanPage() {
                       name="urgency"
                       checked={urgency === 'WARNING'}
                       onChange={() => setUrgency('WARNING')}
-                      className="mr-2 text-amber-500"
+                      className="mr-2 text-amber-600"
                     />
                     <span>Warning (Quality Defect)</span>
                   </label>
@@ -422,7 +428,7 @@ export default function MobileScanPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                   Floor Notes for Attending Mechanic
                 </label>
                 <textarea
@@ -430,14 +436,14 @@ export default function MobileScanPage() {
                   onChange={(e) => setFaultNotes(e.target.value)}
                   rows={3}
                   placeholder="e.g. Breaking needle on heavy seam crossover on pocket attachment..."
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-800 border border-slate-700 rounded-xl focus:ring-2 focus:ring-rose-500 text-slate-100 outline-none"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 text-slate-800 outline-none focus:bg-white transition"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-xl text-xs font-bold shadow-lg shadow-rose-600/30 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full py-3 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-600/25 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <Radio className="w-4 h-4" />
                 <span>Broadcast Breakdown to Mechanic Queue</span>
@@ -446,14 +452,14 @@ export default function MobileScanPage() {
           ) : (
             <form onSubmit={handleRelocateSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                   Move To Target Line / Area *
                 </label>
                 <select
                   value={targetLine}
                   onChange={(e) => setTargetLine(e.target.value as FloorLine)}
                   required
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-800 border border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 text-slate-100 outline-none"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-slate-800 outline-none font-medium focus:bg-white transition"
                 >
                   <option value="Line 01">Line 01 (Polo / Knit)</option>
                   <option value="Line 02">Line 02 (T-Shirts Basic)</option>
@@ -465,7 +471,7 @@ export default function MobileScanPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                   Target Station Position
                 </label>
                 <input
@@ -473,12 +479,12 @@ export default function MobileScanPage() {
                   value={targetStation}
                   onChange={(e) => setTargetStation(e.target.value)}
                   placeholder="e.g. Station 06"
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-800 border border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 text-slate-100 outline-none font-medium"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-slate-800 outline-none font-medium focus:bg-white transition"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                   Reason for Relocation
                 </label>
                 <input
@@ -486,14 +492,14 @@ export default function MobileScanPage() {
                   value={relocateReason}
                   onChange={(e) => setRelocateReason(e.target.value)}
                   placeholder="e.g. Style changeover: line balancing for heavy seam"
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-800 border border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 text-slate-100 outline-none"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-slate-800 outline-none focus:bg-white transition"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/25 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <ArrowRightLeft className="w-4 h-4" />
                 <span>Confirm Machine Movement</span>

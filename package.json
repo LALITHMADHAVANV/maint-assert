@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed:supabase": "node scripts/seed-supabase.mjs",
-    "set-passwords": "node scripts/set-all-user-passwords-supabase.mjs"
+    "seed:users": "node scripts/create-users.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

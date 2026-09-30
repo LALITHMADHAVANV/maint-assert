@@ -55,10 +55,28 @@ interface CategoryStyle {
 
 export function getCategoryStyle(category?: AssetCategory, asset?: Machine): CategoryStyle {
   switch (category) {
+    case 'FURNITURE':
     case 'TABLE':
+    case 'CHAIR': {
+      const isChair =
+        asset?.type?.startsWith('CHAIR') ||
+        asset?.id?.startsWith('CHR') ||
+        asset?.category === 'CHAIR';
+      if (isChair) {
+        return {
+          label: 'Ergonomic Chair',
+          plural: 'Chairs & Seating',
+          icon: Armchair,
+          color: 'text-teal-800 bg-teal-50',
+          badge: 'bg-teal-100 text-teal-800 border-teal-300',
+          border: 'border-teal-200',
+          dot: 'bg-teal-500',
+          activeBtn: 'bg-teal-600 text-white shadow-xs',
+        };
+      }
       return {
         label: 'Work Table',
-        plural: 'Work Tables',
+        plural: 'Furniture & Workstations',
         icon: LayoutGrid,
         color: 'text-amber-800 bg-amber-50',
         badge: 'bg-amber-100 text-amber-800 border-amber-300',
@@ -66,17 +84,7 @@ export function getCategoryStyle(category?: AssetCategory, asset?: Machine): Cat
         dot: 'bg-amber-500',
         activeBtn: 'bg-amber-600 text-white shadow-xs',
       };
-    case 'CHAIR':
-      return {
-        label: 'Ergonomic Chair',
-        plural: 'Chairs & Seating',
-        icon: Armchair,
-        color: 'text-teal-800 bg-teal-50',
-        badge: 'bg-teal-100 text-teal-800 border-teal-300',
-        border: 'border-teal-200',
-        dot: 'bg-teal-500',
-        activeBtn: 'bg-teal-600 text-white shadow-xs',
-      };
+    }
     case 'VEHICLE':
       return {
         label: 'Plant Vehicle',
@@ -173,6 +181,33 @@ export function getCategoryStyle(category?: AssetCategory, asset?: Machine): Cat
 function getAssetCategorySpecs(asset: Machine): Record<string, string> {
   const cat = asset.category || 'MACHINE';
   switch (cat) {
+    case 'FURNITURE': {
+      const isChair =
+        asset.type?.startsWith('CHAIR') ||
+        asset.id?.startsWith('CHR') ||
+        asset.category === 'CHAIR';
+      if (isChair) {
+        return {
+          'Height Adjustment': 'Class 4 Pneumatic gas-lift cylinder (42 cm to 56 cm)',
+          'Lumbar Support': 'Ergonomic contour with height & tilt lock mechanism',
+          'Seat Cushion': 'High-density molded polyurethane foam (55 kg/m³)',
+          'Casters & Base': '5-star reinforced nylon base with twin-wheel friction casters',
+          'Swivel Range': '360° continuous rotation with ball-bearing hub',
+          'Ergonomic Compliance': 'EN 1335-1 / OSHA Apparel Floor Ergonomics Standard',
+        };
+      }
+      return {
+        'Dimensions': '120 cm x 60 cm x 75 cm (Adjustable)',
+        'Bed Surface': 'Micro-pressure laminate with metric measurement rule',
+        'Frame Construction': 'Heavy-gauge tubular steel with anti-vibration foot pads',
+        'Load Rating': '250 kg distributed working weight',
+        'Drawer Unit': 'Lockable steel slide drawer for tools and shears',
+        'Air Flotation Option':
+          asset.model?.includes('Air') || asset.specs?.includes('Air')
+            ? 'Integrated blower bed with perforated stainless nozzle'
+            : 'Passive high-glide laminate',
+      };
+    }
     case 'TABLE':
       return {
         'Dimensions': '120 cm x 60 cm x 75 cm (Adjustable)',
@@ -312,6 +347,24 @@ function getAssetCategorySpecs(asset: Machine): Record<string, string> {
 
 function getCategorySOP(category?: AssetCategory, asset?: Machine): string[] {
   switch (category) {
+    case 'FURNITURE': {
+      const isChair =
+        asset?.type?.startsWith('CHAIR') ||
+        asset?.id?.startsWith('CHR') ||
+        asset?.category === 'CHAIR';
+      if (isChair) {
+        return [
+          'Adjust the pneumatic chair height so your knees form a 90° angle with feet flat on the floor or treadle.',
+          'Always set lumbar support firmly against the lower back before beginning extended sewing shifts.',
+          'Never stand on swivel chairs or use them as a stepping ladder to retrieve garment rolls.',
+        ];
+      }
+      return [
+        'Keep table surface completely free of loose sewing needles, shears, and pins before starting work.',
+        'Wipe the laminated cutting surface daily using approved anti-static microfiber cloth.',
+        'Ensure table levelers are securely locked to the concrete floor to prevent operational vibration.',
+      ];
+    }
     case 'TABLE':
       return [
         'Keep table surface completely free of loose sewing needles, shears, and pins before starting work.',
@@ -400,6 +453,24 @@ function getCategorySOP(category?: AssetCategory, asset?: Machine): string[] {
 
 function getCategoryChecklist(category?: AssetCategory, asset?: Machine): string[] {
   switch (category) {
+    case 'FURNITURE': {
+      const isChair =
+        asset?.type?.startsWith('CHAIR') ||
+        asset?.id?.startsWith('CHR') ||
+        asset?.category === 'CHAIR';
+      if (isChair) {
+        return [
+          'Daily: Check pneumatic gas lift height retention under operator load.',
+          'Weekly: Remove thread fluff and lint tangled in 5-star swivel wheel casters.',
+          'Monthly: Tighten backrest bracket screws; inspect molded foam seat integrity.',
+        ];
+      }
+      return [
+        'Daily: Inspect surface for scratches, chips, or rough burrs that could snag delicate knit fabrics.',
+        'Weekly: Check frame bolt tightness and inspect caster wheel locks on movable inspection beds.',
+        'Monthly: Calibrate levelness using spirit level; vacuum lint buildup under table drawer slides.',
+      ];
+    }
     case 'TABLE':
       return [
         'Daily: Inspect surface for scratches, chips, or rough burrs that could snag delicate knit fabrics.',
@@ -499,8 +570,10 @@ export function AssetModal({
   const [activeCategory, setActiveCategory] = useState<AssetCategory>(() => {
     let cat = asset?.category || initialCategory;
     if (cat === 'LIGHT' || cat === 'FAN') cat = 'UTILITY';
+    if (cat === 'TABLE' || cat === 'CHAIR') cat = 'FURNITURE';
     return cat;
   });
+  const [furnitureFilter, setFurnitureFilter] = useState<'ALL' | 'TABLE' | 'CHAIR'>('ALL');
   const [utilityFilter, setUtilityFilter] = useState<'ALL' | 'PLANT' | 'LIGHT' | 'FAN'>('ALL');
   const [selectedAssetId, setSelectedAssetId] = useState<string>(
     asset?.id || ''
@@ -523,20 +596,28 @@ export function AssetModal({
   // Sync state on open
   useEffect(() => {
     if (isOpen) {
+      setFurnitureFilter('ALL');
       setUtilityFilter('ALL');
       if (asset) {
         setSelectedAssetId(asset.id);
-        const cat = asset.category || 'MACHINE';
-        setActiveCategory(cat === 'LIGHT' || cat === 'FAN' ? 'UTILITY' : cat);
+        let cat = asset.category || 'MACHINE';
+        if (cat === 'LIGHT' || cat === 'FAN') cat = 'UTILITY';
+        if (cat === 'TABLE' || cat === 'CHAIR') cat = 'FURNITURE';
+        setActiveCategory(cat);
       } else {
         let cat = initialCategory || 'MACHINE';
         if (cat === 'LIGHT' || cat === 'FAN') cat = 'UTILITY';
+        if (cat === 'TABLE' || cat === 'CHAIR') cat = 'FURNITURE';
         setActiveCategory(cat);
         const match = allAssets.find((m) => {
           const mCat = m.category || 'MACHINE';
-          return cat === 'UTILITY'
-            ? mCat === 'UTILITY' || mCat === 'LIGHT' || mCat === 'FAN'
-            : mCat === cat;
+          if (cat === 'UTILITY') {
+            return mCat === 'UTILITY' || mCat === 'LIGHT' || mCat === 'FAN';
+          }
+          if (cat === 'FURNITURE') {
+            return mCat === 'FURNITURE' || mCat === 'TABLE' || mCat === 'CHAIR';
+          }
+          return mCat === cat;
         });
         if (match) setSelectedAssetId(match.id);
       }
@@ -552,12 +633,27 @@ export function AssetModal({
         return cat === 'UTILITY' || cat === 'LIGHT' || cat === 'FAN';
       });
     }
+    if (activeCategory === 'FURNITURE') {
+      return allAssets.filter((m) => {
+        const cat = m.category || 'MACHINE';
+        return cat === 'FURNITURE' || cat === 'TABLE' || cat === 'CHAIR';
+      });
+    }
     return allAssets.filter((m) => (m.category || 'MACHINE') === activeCategory);
   }, [allAssets, activeCategory]);
 
-  // Filtered by search & utility sub-filter if any
+  // Filtered by search & sub-filters if any
   const filteredCategoryAssets = useMemo(() => {
     let list = categoryAssets;
+    if (activeCategory === 'FURNITURE' && furnitureFilter !== 'ALL') {
+      list = list.filter((m) => {
+        const isChair =
+          m.type?.startsWith('CHAIR') || m.id?.startsWith('CHR') || m.category === 'CHAIR';
+        if (furnitureFilter === 'CHAIR') return isChair;
+        if (furnitureFilter === 'TABLE') return !isChair;
+        return true;
+      });
+    }
     if (activeCategory === 'UTILITY' && utilityFilter !== 'ALL') {
       list = list.filter((m) => {
         const isLight =
@@ -580,7 +676,7 @@ export function AssetModal({
         (m.stationNo || '').toLowerCase().includes(q) ||
         (m.currentLine || '').toLowerCase().includes(q)
     );
-  }, [categoryAssets, searchQuery, activeCategory, utilityFilter]);
+  }, [categoryAssets, searchQuery, activeCategory, utilityFilter, furnitureFilter]);
 
   // Active Asset
   const currentAsset: Machine | undefined = useMemo(() => {
@@ -688,10 +784,10 @@ export function AssetModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden my-auto">
         {/* Header with Category Badge & Asset Title */}
-        <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 p-4 sm:p-5 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
+        <div className="bg-slate-50 p-4 sm:p-5 text-slate-800 flex items-center justify-between border-b border-slate-200 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div
               className={`w-10 h-10 rounded-2xl flex items-center justify-center border shrink-0 ${catStyle.badge}`}
@@ -700,7 +796,7 @@ export function AssetModal({
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-mono font-extrabold text-sm sm:text-base text-white">
+                <span className="font-mono font-extrabold text-sm sm:text-base text-slate-900">
                   {currentAsset.id}
                 </span>
                 <span
@@ -715,7 +811,7 @@ export function AssetModal({
                   </span>
                 </div>
               </div>
-              <h3 className="font-bold text-xs sm:text-sm text-slate-300 truncate mt-0.5">
+              <h3 className="font-bold text-xs sm:text-sm text-slate-600 truncate mt-0.5">
                 {currentAsset.name || `${currentAsset.brand} ${currentAsset.model}`}
               </h3>
             </div>
@@ -725,7 +821,7 @@ export function AssetModal({
             <button
               type="button"
               onClick={() => setIsPrintModalOpen(true)}
-              className="px-3 py-1.5 bg-indigo-600/80 hover:bg-indigo-600 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer border border-indigo-400/40 shadow-xs"
+              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
               title="Print Asset QR Tag or Equipment Document"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -734,7 +830,7 @@ export function AssetModal({
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer"
               title="Close popup"
             >
               <X className="w-5 h-5" />
@@ -765,35 +861,24 @@ export function AssetModal({
             <button
               type="button"
               onClick={() => {
-                setActiveCategory('TABLE');
-                const first = allAssets.find((m) => m.category === 'TABLE');
+                setActiveCategory('FURNITURE');
+                setFurnitureFilter('ALL');
+                const first = allAssets.find(
+                  (m) =>
+                    m.category === 'FURNITURE' ||
+                    m.category === 'TABLE' ||
+                    m.category === 'CHAIR'
+                );
                 if (first) setSelectedAssetId(first.id);
               }}
               className={`px-2.5 py-1.5 rounded-xl border transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
-                activeCategory === 'TABLE'
+                activeCategory === 'FURNITURE'
                   ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
                   : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
               }`}
             >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Work Tables</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveCategory('CHAIR');
-                const first = allAssets.find((m) => m.category === 'CHAIR');
-                if (first) setSelectedAssetId(first.id);
-              }}
-              className={`px-2.5 py-1.5 rounded-xl border transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
-                activeCategory === 'CHAIR'
-                  ? 'bg-teal-600 text-white border-teal-600 shadow-xs'
-                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
-              }`}
-            >
               <Armchair className="w-3.5 h-3.5" />
-              <span>Chairs</span>
+              <span>Furniture &amp; Seating</span>
             </button>
 
             <button
@@ -833,7 +918,7 @@ export function AssetModal({
               }`}
             >
               <Flame className="w-3.5 h-3.5" />
-              <span>Utilities & Plant</span>
+              <span>Utilities &amp; Plant</span>
             </button>
           </div>
 
@@ -852,7 +937,66 @@ export function AssetModal({
 
         {/* Category Assets Picker Strip */}
         <div className="px-4 py-2 bg-slate-100/70 border-b border-slate-200 overflow-x-auto flex items-center gap-2 shrink-0 scrollbar-none">
-          {activeCategory === 'UTILITY' ? (
+          {activeCategory === 'FURNITURE' ? (
+            <div className="flex items-center gap-1 shrink-0 pr-2 mr-1 border-r border-slate-300">
+              <span className="text-[10px] font-black text-amber-800 uppercase tracking-wider mr-1">
+                Filter:
+              </span>
+              <button
+                type="button"
+                onClick={() => setFurnitureFilter('ALL')}
+                className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                  furnitureFilter === 'ALL'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                All ({categoryAssets.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFurnitureFilter('TABLE')}
+                className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 ${
+                  furnitureFilter === 'TABLE'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <LayoutGrid className="w-3 h-3 text-amber-600" />
+                Work Tables (
+                {
+                  categoryAssets.filter(
+                    (m) =>
+                      !m.type?.startsWith('CHAIR') &&
+                      !m.id?.startsWith('CHR') &&
+                      m.category !== 'CHAIR'
+                  ).length
+                }
+                )
+              </button>
+              <button
+                type="button"
+                onClick={() => setFurnitureFilter('CHAIR')}
+                className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 ${
+                  furnitureFilter === 'CHAIR'
+                    ? 'bg-teal-600 text-white shadow-xs'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <Armchair className="w-3 h-3 text-teal-600" />
+                Chairs (
+                {
+                  categoryAssets.filter(
+                    (m) =>
+                      m.type?.startsWith('CHAIR') ||
+                      m.id?.startsWith('CHR') ||
+                      m.category === 'CHAIR'
+                  ).length
+                }
+                )
+              </button>
+            </div>
+          ) : activeCategory === 'UTILITY' ? (
             <div className="flex items-center gap-1 shrink-0 pr-2 mr-1 border-r border-slate-300">
               <span className="text-[10px] font-black text-purple-800 uppercase tracking-wider mr-1">
                 Filter:

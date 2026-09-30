@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { SEED_USERS } from '@/lib/seedData';
 import { UserProfile, UserRole } from '@/types/cmms';
-import { supabaseUrl, supabaseAnonKey } from '@/lib/supabase';
 
 // Helper to get Supabase Admin client
 function getSupabaseAdmin() {

@@ -185,24 +185,32 @@ export function getAssetDepartment(asset: Machine): FactoryDepartment {
 
 export function getCategoryMeta(category?: AssetCategory, asset?: Machine) {
   switch (category) {
+    case 'FURNITURE':
     case 'TABLE':
+    case 'CHAIR': {
+      const isChair =
+        asset?.type?.startsWith('CHAIR') ||
+        asset?.id?.startsWith('CHR') ||
+        asset?.category === 'CHAIR';
+      if (isChair) {
+        return {
+          label: 'Ergonomic Chair',
+          plural: 'Chairs & Seating',
+          icon: Armchair,
+          color: 'text-teal-700 bg-teal-50/80 border-teal-200/60',
+          badge: 'bg-teal-50 text-teal-800 border-teal-200',
+          dot: 'bg-teal-500',
+        };
+      }
       return {
         label: 'Work Table',
-        plural: 'Work Tables',
+        plural: 'Furniture & Workstations',
         icon: LayoutGrid,
         color: 'text-amber-700 bg-amber-50/80 border-amber-200/60',
         badge: 'bg-amber-50 text-amber-800 border-amber-200',
         dot: 'bg-amber-500',
       };
-    case 'CHAIR':
-      return {
-        label: 'Ergonomic Chair',
-        plural: 'Chairs & Seating',
-        icon: Armchair,
-        color: 'text-teal-700 bg-teal-50/80 border-teal-200/60',
-        badge: 'bg-teal-50 text-teal-800 border-teal-200',
-        dot: 'bg-teal-500',
-      };
+    }
     case 'VEHICLE':
       return {
         label: 'Plant Vehicle',
@@ -418,6 +426,7 @@ export default function FloorTrackerPage() {
   const categoryCounts = useMemo(() => {
     const counts: Record<AssetCategory, number> = {
       MACHINE: 0,
+      FURNITURE: 0,
       TABLE: 0,
       CHAIR: 0,
       VEHICLE: 0,
@@ -436,6 +445,7 @@ export default function FloorTrackerPage() {
   const categoryValuations = useMemo(() => {
     const vals: Record<AssetCategory, number> = {
       MACHINE: 0,
+      FURNITURE: 0,
       TABLE: 0,
       CHAIR: 0,
       VEHICLE: 0,
@@ -598,8 +608,9 @@ export default function FloorTrackerPage() {
   const handleCategoryChangeInForm = (cat: AssetCategory) => {
     const rnd = Math.floor(100 + Math.random() * 900);
     switch (cat) {
+      case 'FURNITURE':
       case 'TABLE':
-        setNewCategory('TABLE');
+        setNewCategory(cat);
         setNewId(`TBL-CUT-${rnd}`);
         setNewBrand('Eastman');
         setNewModel('SpreadMaster-12');
@@ -708,6 +719,7 @@ export default function FloorTrackerPage() {
 
     const typeMapping: Record<AssetCategory, MachineType> = {
       MACHINE: 'OVERLOCK_4_THREAD',
+      FURNITURE: 'TABLE_SEWING',
       TABLE: 'TABLE_SEWING',
       CHAIR: 'CHAIR_OPERATOR',
       VEHICLE: 'VEHICLE_FORKLIFT',
@@ -876,42 +888,42 @@ export default function FloorTrackerPage() {
       {/* 2. EXECUTIVE KPI & ASSET METRICS DECK */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left: Plant Capital & Health Overview Card */}
-        <div className="lg:col-span-4 bg-slate-950 text-white rounded-2xl p-5 border border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
+        <div className="lg:col-span-4 bg-white text-slate-800 rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between space-y-4">
           <div>
-            <div className="flex items-center justify-between text-[11px] font-semibold text-indigo-300 uppercase tracking-wider">
+            <div className="flex items-center justify-between text-[11px] font-bold text-indigo-700 uppercase tracking-wider">
               <span>Plant Capital Valuation</span>
-              <span className="flex items-center gap-1.5 text-emerald-400 bg-emerald-950/70 border border-emerald-500/30 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Audited Fleet
               </span>
             </div>
-            <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white mt-2">
+            <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-slate-900 mt-2">
               ₹{totalValuation.toLocaleString('en-IN')}
             </div>
-            <div className="text-xs text-slate-400 mt-1 flex items-center gap-2">
-              <span className="text-white font-bold">{totalAssets} Units Registered</span>
-              <span className="text-slate-600">•</span>
-              <span className="text-emerald-400 font-semibold">{activeCount} Operational</span>
+            <div className="text-xs text-slate-500 mt-1 flex items-center gap-2">
+              <span className="text-slate-800 font-bold">{totalAssets} Units Registered</span>
+              <span className="text-slate-300">•</span>
+              <span className="text-emerald-700 font-semibold">{activeCount} Operational</span>
               {breakdownCount > 0 && (
                 <>
-                  <span className="text-slate-600">•</span>
-                  <span className="text-rose-400 font-bold">{breakdownCount} Defect</span>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-rose-600 font-bold">{breakdownCount} Defect</span>
                 </>
               )}
             </div>
           </div>
 
           {/* Operational Health Meter Bar */}
-          <div className="space-y-2 pt-3 border-t border-slate-800/80">
+          <div className="space-y-2 pt-3 border-t border-slate-100">
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-400">Operational Availability</span>
-              <span className="font-bold text-emerald-400 font-mono">
+              <span className="text-slate-500 font-medium">Operational Availability</span>
+              <span className="font-bold text-emerald-700 font-mono">
                 {totalAssets > 0 ? Math.round((activeCount / totalAssets) * 100) : 100}%
               </span>
             </div>
 
             {/* Segmented Meter */}
-            <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden flex">
+            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden flex border border-slate-200/60">
               <div
                 style={{ width: `${totalAssets > 0 ? (activeCount / totalAssets) * 100 : 100}%` }}
                 className="bg-emerald-500 h-full transition-all"
@@ -929,7 +941,7 @@ export default function FloorTrackerPage() {
               />
               <div
                 style={{ width: `${totalAssets > 0 ? (scrapCount / totalAssets) * 100 : 0}%` }}
-                className="bg-slate-600 h-full transition-all"
+                className="bg-slate-300 h-full transition-all"
                 title={`Scrap: ${scrapCount}`}
               />
             </div>
@@ -1427,17 +1439,17 @@ export default function FloorTrackerPage() {
       {/* VIEW MODE 3: SEWING WORKSTATIONS MATRIX */}
       {viewMode === 'WORKSTATIONS' && (
         <div className="space-y-4">
-          <div className="bg-slate-950 text-white p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-800">
+          <div className="bg-white text-slate-800 p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-200 shadow-2xs">
             <div>
-              <h3 className="font-bold text-sm tracking-tight flex items-center gap-2">
-                <LayoutGrid className="w-4 h-4 text-indigo-400" />
+              <h3 className="font-bold text-sm tracking-tight flex items-center gap-2 text-slate-900">
+                <LayoutGrid className="w-4 h-4 text-indigo-600" />
                 <span>Sewing Floor Workstation Matrix (Lines 01–04)</span>
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 Physical workstation bundles (Work Table + Sewing Machine + Operator Chair + Task Light + Fan) across sewing lines.
               </p>
             </div>
-            <span className="text-xs font-mono font-bold bg-white/10 px-3 py-1 rounded-xl border border-white/20 self-start sm:self-auto">
+            <span className="text-xs font-mono font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded-xl border border-slate-200 self-start sm:self-auto">
               {workstationMatrix.length} Workstations Staged
             </span>
           </div>

@@ -111,23 +111,23 @@ export function PrintableAssetDocumentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto print:static print:p-0 print:bg-white print-modal-overlay">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto print:static print:p-0 print:bg-white print-modal-overlay">
       <div className="bg-slate-100 rounded-3xl max-w-4xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-slate-300 overflow-hidden my-auto print:max-w-none print:w-full print:border-none print:shadow-none print:bg-white print:rounded-none print:overflow-visible print-modal-container">
         
         {/* Modal Top Bar (Hidden during actual print) */}
-        <div className="bg-slate-900 p-4 sm:p-5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 shrink-0 no-print">
+        <div className="bg-slate-50 p-4 sm:p-5 text-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 shrink-0 no-print">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-md">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-xs">
               <Printer className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-sm sm:text-base">Document Print &amp; Layout Preview</h3>
-                <span className="font-mono text-xs text-indigo-300 font-bold bg-indigo-900/60 px-2 py-0.5 rounded border border-indigo-700/50">
+                <h3 className="font-extrabold text-sm sm:text-base text-slate-900">Document Print &amp; Layout Preview</h3>
+                <span className="font-mono text-xs text-indigo-700 font-bold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
                   {asset.id}
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 Inspect document formatting and trigger high-resolution printer output.
               </p>
             </div>
@@ -137,7 +137,7 @@ export function PrintableAssetDocumentModal({
             <button
               type="button"
               onClick={handleTriggerPrint}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer shadow-md shadow-indigo-600/30"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer shadow-xs shadow-indigo-600/30"
             >
               <Printer className="w-4 h-4" />
               <span>Print Document Now</span>
@@ -145,7 +145,7 @@ export function PrintableAssetDocumentModal({
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer"
               title="Close Print Preview"
             >
               <X className="w-5 h-5" />

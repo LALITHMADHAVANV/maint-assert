@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import {
   Boxes,
@@ -31,6 +31,7 @@ import {
   ListPlus,
   Layers,
   Lock,
+  ChevronDown,
 } from 'lucide-react';
 import {
   SparePart,
@@ -65,8 +66,8 @@ export default function InventoryPage() {
   const [parts, setParts] = useState<SparePart[]>([]);
   const [requisitions, setRequisitions] = useState<PartRequisition[]>([]);
 
-  // Active view tab: 'inventory' | 'requisitions'
-  const [activeViewTab, setActiveViewTab] = useState<'inventory' | 'requisitions'>('inventory');
+  // Requisition Hub Modal tab: 'MONTHLY_INDENT' | 'URGENT_NEED' | 'CRITICAL_CEO' | 'VIEW_ALL'
+  const [reqModalTab, setReqModalTab] = useState<RequisitionType | 'VIEW_ALL'>('MONTHLY_INDENT');
 
   // Search & filters for inventory
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,6 +103,20 @@ export default function InventoryPage() {
   const [indentItems, setIndentItems] = useState<RequisitionItem[]>([]);
   const [newIndentPartId, setNewIndentPartId] = useState<string>('');
   const [newIndentQty, setNewIndentQty] = useState<number>(50);
+
+  // Centralized Indent & Requisition Dropdown Menu state
+  const [isIndentMenuOpen, setIsIndentMenuOpen] = useState(false);
+  const indentMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (indentMenuRef.current && !indentMenuRef.current.contains(event.target as Node)) {
+        setIsIndentMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const [isSubmittingReq, setIsSubmittingReq] = useState(false);
 
@@ -211,14 +226,46 @@ export default function InventoryPage() {
     setRestockPO('');
   };
 
-  const handleOpenReqModal = (mode: RequisitionType = 'MONTHLY_INDENT') => {
+  const handleOpenReqModal = (mode: RequisitionType | 'VIEW_ALL' = 'MONTHLY_INDENT', initialPartId?: string) => {
+    if (mode === 'VIEW_ALL') {
+      setReqModalTab('VIEW_ALL');
+      setIsReqModalOpen(true);
+      return;
+    }
+
+    setReqModalTab(mode);
     setReqMode(mode);
     setReqJustification('');
     setReqCostOverride(0);
 
+    if (initialPartId) {
+      setReqPartId(initialPartId);
+      setNewIndentPartId(initialPartId);
+      const targetPart = parts.find((p) => p.partId === initialPartId);
+      if (targetPart) {
+        setReqCustomPartName(targetPart.name);
+      }
+    }
+
     if (mode === 'MONTHLY_INDENT') {
-      // Preload 2 sample items in list if list is empty for easy demo
-      if (indentItems.length === 0 && parts.length >= 2) {
+      if (initialPartId) {
+        const targetPart = parts.find((p) => p.partId === initialPartId);
+        if (targetPart && !indentItems.some((it) => it.partId === initialPartId)) {
+          setIndentItems((prev) => [
+            ...prev,
+            {
+              partId: targetPart.partId,
+              partName: targetPart.name,
+              sku: targetPart.sku,
+              quantity: targetPart.minStock * 2 || 50,
+              unit: targetPart.unit,
+              unitCost: targetPart.unitCost,
+              totalCost: Math.round((targetPart.minStock * 2 || 50) * targetPart.unitCost * 100) / 100,
+            },
+          ]);
+        }
+      } else if (indentItems.length === 0 && parts.length >= 2) {
+        // Preload sample items in list if list is empty for easy demo
         setIndentItems([
           {
             partId: parts[0].partId,
@@ -388,8 +435,8 @@ export default function InventoryPage() {
         );
       }
 
-      setIsReqModalOpen(false);
-      setActiveViewTab('requisitions');
+      setReqModalTab('VIEW_ALL');
+      setIsReqModalOpen(true);
     } catch (err) {
       showToast('Failed to submit requisition', 'error');
       console.error(err);
@@ -481,39 +528,173 @@ export default function InventoryPage() {
 
         {/* Action Buttons: Critical vs Urgent vs Monthly Indent */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Mechanic & Admin Actions: Critical vs Urgent vs Monthly Indent */}
+          {/* Centralized Action: Monthly Indents, Critical Parts, and Urgent Needs under a Specific Button */}
           {isMechanicOrAdmin && (
-            <>
-              {/* 1. Critical Need (CEO Permission) */}
+            <div className="relative" ref={indentMenuRef}>
               <button
-                onClick={() => handleOpenReqModal('CRITICAL_CEO')}
-                className="text-xs font-extrabold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer urgent-pulse"
-                title="Line Stoppage / Emergency Stoppage requiring CEO Approval"
+                type="button"
+                onClick={() => setIsIndentMenuOpen(!isIndentMenuOpen)}
+                className="text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 px-4 py-2 rounded-xl transition flex items-center gap-2 shadow-sm cursor-pointer"
+                title="Centralized Indents & Requisitions: Monthly Indents, Critical Parts (CEO), and Urgent Needs (Manager)"
               >
-                <ShieldAlert className="w-4 h-4 text-white" />
-                <span>🚨 Critical Need (CEO Permission)</span>
+                <ListPlus className="w-4 h-4 text-white" />
+                <span>Central Indents &amp; Requisitions</span>
+                {pendingCeoApprovals.length > 0 && (
+                  <span className="px-1.5 py-0.2 text-[10px] rounded-full bg-rose-500 text-white font-extrabold urgent-pulse">
+                    {pendingCeoApprovals.length} CEO
+                  </span>
+                )}
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                    isIndentMenuOpen ? 'rotate-180' : ''
+                  }`}
+                />
               </button>
 
-              {/* 2. Urgent Need (Manager Fast-Track) */}
-              <button
-                onClick={() => handleOpenReqModal('URGENT_NEED')}
-                className="text-xs font-bold text-amber-900 bg-amber-400 hover:bg-amber-500 active:bg-amber-600 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-xs cursor-pointer"
-                title="Fast-Track Urgent Shift Requirement (Maintenance Manager Approval)"
-              >
-                <Zap className="w-4 h-4 text-amber-950" />
-                <span>⚡ Urgent Need (Manager)</span>
-              </button>
+              {/* Centralized Dropdown Menu */}
+              {isIndentMenuOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="px-3.5 py-2 border-b border-slate-100">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                      Centralized Indent Desk
+                    </span>
+                    <span className="text-xs font-bold text-slate-800">
+                      Select Indent or Requisition Track:
+                    </span>
+                  </div>
 
-              {/* 3. Monthly Indent (Part List) */}
-              <button
-                onClick={() => handleOpenReqModal('MONTHLY_INDENT')}
-                className="text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-xs cursor-pointer"
-                title="Create Multi-Part Monthly Indent Order List"
-              >
-                <ListPlus className="w-4 h-4 text-indigo-600" />
-                <span>📦 Monthly Indent (Part List)</span>
-              </button>
-            </>
+                  <div className="p-1.5 space-y-1">
+                    {/* 1. Monthly Indent (Part List) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsIndentMenuOpen(false);
+                        handleOpenReqModal('MONTHLY_INDENT');
+                      }}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-indigo-50/70 transition flex items-start gap-2.5 group cursor-pointer"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-indigo-600 group-hover:text-white transition">
+                        <ListPlus className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-900 group-hover:text-indigo-700">
+                            📦 Monthly Indents
+                          </span>
+                          <span className="text-[9px] font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded">
+                            Multi-Part List
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+                          Planned store replenishment list for upcoming production month.
+                        </p>
+                      </div>
+                    </button>
+
+                    {/* 2. Critical Need (CEO Approval) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsIndentMenuOpen(false);
+                        handleOpenReqModal('CRITICAL_CEO');
+                      }}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-rose-50/70 transition flex items-start gap-2.5 group cursor-pointer"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-rose-600 group-hover:text-white transition">
+                        <ShieldAlert className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-900 group-hover:text-rose-700">
+                            🚨 Critical Parts
+                          </span>
+                          <span className="text-[9px] font-extrabold text-rose-800 bg-rose-100 px-1.5 py-0.5 rounded urgent-pulse">
+                            CEO Sanction
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+                          Emergency line stoppage breakdown sanction &amp; budget override.
+                        </p>
+                      </div>
+                    </button>
+
+                    {/* 3. Urgent Need (Manager Fast-Track) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsIndentMenuOpen(false);
+                        handleOpenReqModal('URGENT_NEED');
+                      }}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-amber-50/70 transition flex items-start gap-2.5 group cursor-pointer"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-amber-500 group-hover:text-white transition">
+                        <Zap className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-900 group-hover:text-amber-800">
+                            ⚡ Urgent Needs
+                          </span>
+                          <span className="text-[9px] font-bold text-amber-900 bg-amber-100 px-1.5 py-0.5 rounded">
+                            Manager Fast-Track
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+                          High risk shift defect prevention &amp; rapid floor procurement.
+                        </p>
+                      </div>
+                    </button>
+
+                    {/* 4. Active Requisitions & Approvals */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsIndentMenuOpen(false);
+                        handleOpenReqModal('VIEW_ALL');
+                      }}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 transition flex items-start gap-2.5 group cursor-pointer border-t border-slate-100"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-indigo-600 group-hover:text-white transition">
+                        <FileSpreadsheet className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-900 group-hover:text-indigo-700">
+                            📋 Requisitions &amp; Approvals
+                          </span>
+                          {pendingCeoApprovals.length > 0 ? (
+                            <span className="text-[9px] font-extrabold text-rose-800 bg-rose-100 px-1.5 py-0.5 rounded urgent-pulse">
+                              {pendingCeoApprovals.length} CEO Needed
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                              {requisitions.length} Items
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+                          Audit, sanction pending indents, and inspect track history.
+                        </p>
+                      </div>
+                    </button>
+                  </div>
+
+                  <div className="pt-2 pb-1 px-3 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                    <span>Centralized Requisition Engine</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsIndentMenuOpen(false);
+                        handleOpenReqModal('VIEW_ALL');
+                      }}
+                      className="font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                    >
+                      Open Full Hub ➜
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Store Person & Admin Action: Restock Intake */}
@@ -536,46 +717,8 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {/* Sub-Tabs View Switcher */}
-      <div className="flex border-b border-slate-200 space-x-3">
-        <button
-          onClick={() => setActiveViewTab('inventory')}
-          className={`pb-3 px-4 text-xs font-bold transition flex items-center gap-2 border-b-2 ${
-            activeViewTab === 'inventory'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Boxes className="w-4 h-4" />
-          <span>1. Tool Crib Stock ({parts.length} SKUs)</span>
-          {lowStockItems.length > 0 && (
-            <span className="px-1.5 py-0.2 text-[10px] rounded-full bg-rose-500 text-white font-bold">
-              {lowStockItems.length} Low
-            </span>
-          )}
-        </button>
-
-        <button
-          onClick={() => setActiveViewTab('requisitions')}
-          className={`pb-3 px-4 text-xs font-bold transition flex items-center gap-2 border-b-2 ${
-            activeViewTab === 'requisitions'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <FileSpreadsheet className="w-4 h-4" />
-          <span>2. Requisitions & Monthly Indents ({requisitions.length})</span>
-          {pendingCeoApprovals.length > 0 && (
-            <span className="px-2 py-0.5 text-[10px] rounded-full bg-rose-600 text-white font-extrabold urgent-pulse">
-              {pendingCeoApprovals.length} CEO Needed
-            </span>
-          )}
-        </button>
-      </div>
-
-      {/* VIEW 1: INVENTORY CATALOG & CRIB STOCK */}
-      {activeViewTab === 'inventory' && (
-        <div className="space-y-6 animate-in fade-in duration-150">
+      {/* INVENTORY CATALOG & CRIB STOCK */}
+      <div className="space-y-6 animate-in fade-in duration-150">
           {/* Summary metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
@@ -749,12 +892,151 @@ export default function InventoryPage() {
             </div>
           </div>
         </div>
-      )}
 
-      {/* VIEW 2: MONTHLY INDENTS, URGENT NEEDS & CRITICAL CEO APPROVALS */}
-      {activeViewTab === 'requisitions' && (
-        <div className="space-y-6 animate-in fade-in duration-150">
-          {/* Requisition KPI Strip */}
+      {/* MODAL 1: RAISE SPARE NEED / MONTHLY INDENT MODAL */}
+      {isReqModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className={`bg-white rounded-3xl w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col ${reqModalTab === 'VIEW_ALL' ? 'max-w-4xl' : 'max-w-2xl'}`}>
+            {/* Modal Header with Mode Switcher */}
+            <div
+              className={`p-5 text-white flex items-center justify-between shrink-0 ${
+                reqModalTab === 'CRITICAL_CEO'
+                  ? 'bg-rose-950'
+                  : reqModalTab === 'URGENT_NEED'
+                  ? 'bg-amber-950'
+                  : reqModalTab === 'VIEW_ALL'
+                  ? 'bg-slate-900'
+                  : 'bg-indigo-950'
+              }`}
+            >
+              <div className="flex items-center space-x-2.5">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white shadow-sm ${
+                    reqModalTab === 'CRITICAL_CEO'
+                      ? 'bg-rose-600 urgent-pulse'
+                      : reqModalTab === 'URGENT_NEED'
+                      ? 'bg-amber-500'
+                      : reqModalTab === 'VIEW_ALL'
+                      ? 'bg-indigo-600'
+                      : 'bg-indigo-600'
+                  }`}
+                >
+                  {reqModalTab === 'CRITICAL_CEO' ? (
+                    <ShieldAlert className="w-5 h-5" />
+                  ) : reqModalTab === 'URGENT_NEED' ? (
+                    <Zap className="w-5 h-5 text-amber-950" />
+                  ) : reqModalTab === 'VIEW_ALL' ? (
+                    <FileSpreadsheet className="w-5 h-5" />
+                  ) : (
+                    <ListPlus className="w-5 h-5" />
+                  )}
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold tracking-tight">
+                    {reqModalTab === 'CRITICAL_CEO'
+                      ? 'Critical Spare Need (CEO Permission Required)'
+                      : reqModalTab === 'URGENT_NEED'
+                      ? 'Urgent Spare Need (Manager Fast-Track)'
+                      : reqModalTab === 'VIEW_ALL'
+                      ? 'Centralized Requisitions & Approvals Desk'
+                      : 'Monthly Spare Inventory Indent (List of Parts)'}
+                  </h4>
+                  <p className="text-[10px] text-slate-300">
+                    {reqModalTab === 'CRITICAL_CEO'
+                      ? 'Emergency machine downtime & budget override'
+                      : reqModalTab === 'URGENT_NEED'
+                      ? 'Urgent shift operational requirement for defect prevention'
+                      : reqModalTab === 'VIEW_ALL'
+                      ? 'Review active indents, manager approvals, and CEO emergency sanctions'
+                      : 'Mechanic planned itemized requirement for upcoming production month'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsReqModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 4 Mode Switcher Tabs */}
+            <div className="flex border-b border-slate-200 text-xs font-bold bg-slate-50 shrink-0 overflow-x-auto">
+              {/* Tab 1: Monthly Indent (Part List) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setReqModalTab('MONTHLY_INDENT');
+                  setReqMode('MONTHLY_INDENT');
+                }}
+                className={`flex-1 min-w-[130px] py-3 text-center border-b-2 transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                  reqModalTab === 'MONTHLY_INDENT'
+                    ? 'border-indigo-600 text-indigo-600 bg-white'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <ListPlus className="w-3.5 h-3.5" />
+                <span>1. Monthly Indent</span>
+              </button>
+
+              {/* Tab 2: Urgent Need (Manager) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setReqModalTab('URGENT_NEED');
+                  setReqMode('URGENT_NEED');
+                }}
+                className={`flex-1 min-w-[130px] py-3 text-center border-b-2 transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                  reqModalTab === 'URGENT_NEED'
+                    ? 'border-amber-500 text-amber-800 bg-white font-extrabold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-600" />
+                <span>2. ⚡ Urgent Need</span>
+              </button>
+
+              {/* Tab 3: Critical Need (CEO) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setReqModalTab('CRITICAL_CEO');
+                  setReqMode('CRITICAL_CEO');
+                }}
+                className={`flex-1 min-w-[130px] py-3 text-center border-b-2 transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                  reqModalTab === 'CRITICAL_CEO'
+                    ? 'border-rose-600 text-rose-600 bg-white font-extrabold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
+                <span>3. 🚨 Critical (CEO)</span>
+              </button>
+
+              {/* Tab 4: All Requisitions & Approvals */}
+              <button
+                type="button"
+                onClick={() => setReqModalTab('VIEW_ALL')}
+                className={`flex-1 min-w-[150px] py-3 text-center border-b-2 transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                  reqModalTab === 'VIEW_ALL'
+                    ? 'border-indigo-600 text-indigo-600 bg-white font-extrabold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>4. 📋 All Requisitions ({requisitions.length})</span>
+                {pendingCeoApprovals.length > 0 && (
+                  <span className="px-1.5 py-0.2 text-[9px] rounded-full bg-rose-600 text-white font-extrabold urgent-pulse">
+                    {pendingCeoApprovals.length} CEO
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Modal Body: Either View All Requisitions Desk OR Indent Request Form */}
+            {reqModalTab === 'VIEW_ALL' ? (
+              <div className="p-6 space-y-6 overflow-y-auto flex-grow max-h-[calc(90vh-140px)]">
+                {/* Requisition KPI Strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
               <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -875,8 +1157,20 @@ export default function InventoryPage() {
               </button>
             </div>
 
-            <div className="text-xs text-slate-500 font-medium">
-              Signed in as: <span className="font-bold text-slate-800">{user?.title || 'Lead Mechanic'}</span>
+            <div className="flex items-center gap-2.5">
+              {isMechanicOrAdmin && (
+                <button
+                  type="button"
+                  onClick={() => handleOpenReqModal('MONTHLY_INDENT')}
+                  className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Raise Indent / Requisition</span>
+                </button>
+              )}
+              <div className="text-xs text-slate-500 font-medium hidden md:block">
+                Signed in as: <span className="font-bold text-slate-800">{user?.title || 'Lead Mechanic'}</span>
+              </div>
             </div>
           </div>
 
@@ -1162,113 +1456,19 @@ export default function InventoryPage() {
               })
             )}
           </div>
-        </div>
-      )}
 
-      {/* MODAL 1: RAISE SPARE NEED / MONTHLY INDENT MODAL */}
-      {isReqModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
-            {/* Modal Header with Mode Switcher */}
-            <div
-              className={`p-5 text-white flex items-center justify-between shrink-0 ${
-                reqMode === 'CRITICAL_CEO'
-                  ? 'bg-rose-950'
-                  : reqMode === 'URGENT_NEED'
-                  ? 'bg-amber-950'
-                  : 'bg-slate-900'
-              }`}
-            >
-              <div className="flex items-center space-x-2.5">
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white shadow-sm ${
-                    reqMode === 'CRITICAL_CEO'
-                      ? 'bg-rose-600 urgent-pulse'
-                      : reqMode === 'URGENT_NEED'
-                      ? 'bg-amber-500'
-                      : 'bg-indigo-600'
-                  }`}
-                >
-                  {reqMode === 'CRITICAL_CEO' ? (
-                    <ShieldAlert className="w-5 h-5" />
-                  ) : reqMode === 'URGENT_NEED' ? (
-                    <Zap className="w-5 h-5 text-amber-950" />
-                  ) : (
-                    <ListPlus className="w-5 h-5" />
-                  )}
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold tracking-tight">
-                    {reqMode === 'CRITICAL_CEO'
-                      ? 'Critical Spare Need (CEO Permission Required)'
-                      : reqMode === 'URGENT_NEED'
-                      ? 'Urgent Spare Need (Manager Fast-Track)'
-                      : 'Monthly Spare Inventory Indent (List of Parts)'}
-                  </h4>
-                  <p className="text-[10px] text-slate-300">
-                    {reqMode === 'CRITICAL_CEO'
-                      ? 'Emergency machine downtime & budget override'
-                      : reqMode === 'URGENT_NEED'
-                      ? 'Urgent shift operational requirement for defect prevention'
-                      : 'Mechanic planned itemized requirement for upcoming production month'}
-                  </p>
+                <div className="pt-3 border-t border-slate-100 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsReqModalOpen(false)}
+                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer"
+                  >
+                    Close Desk
+                  </button>
                 </div>
               </div>
-              <button
-                onClick={() => setIsReqModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* 3 Mode Switcher Tabs */}
-            <div className="flex border-b border-slate-200 text-xs font-bold bg-slate-50 shrink-0">
-              {/* Tab 1: Monthly Indent (Part List) */}
-              <button
-                type="button"
-                onClick={() => setReqMode('MONTHLY_INDENT')}
-                className={`flex-1 py-3 text-center border-b-2 transition flex items-center justify-center gap-1.5 ${
-                  reqMode === 'MONTHLY_INDENT'
-                    ? 'border-indigo-600 text-indigo-600 bg-white'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <ListPlus className="w-3.5 h-3.5" />
-                <span>1. Monthly Indent (Part List)</span>
-              </button>
-
-              {/* Tab 2: Urgent Need (Manager) */}
-              <button
-                type="button"
-                onClick={() => setReqMode('URGENT_NEED')}
-                className={`flex-1 py-3 text-center border-b-2 transition flex items-center justify-center gap-1.5 ${
-                  reqMode === 'URGENT_NEED'
-                    ? 'border-amber-500 text-amber-800 bg-white font-extrabold'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <Zap className="w-3.5 h-3.5 text-amber-600" />
-                <span>2. ⚡ Urgent Need</span>
-              </button>
-
-              {/* Tab 3: Critical Need (CEO) */}
-              <button
-                type="button"
-                onClick={() => setReqMode('CRITICAL_CEO')}
-                className={`flex-1 py-3 text-center border-b-2 transition flex items-center justify-center gap-1.5 ${
-                  reqMode === 'CRITICAL_CEO'
-                    ? 'border-rose-600 text-rose-600 bg-white font-extrabold'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
-                <span>3. 🚨 Critical (CEO Permission)</span>
-              </button>
-            </div>
-
-            {/* Modal Form Scrollable Body */}
-            <form onSubmit={handleRequisitionSubmit} className="p-6 space-y-4 overflow-y-auto flex-grow">
+            ) : (
+              <form onSubmit={handleRequisitionSubmit} className="p-6 space-y-4 overflow-y-auto flex-grow max-h-[calc(90vh-140px)]">
               {/* MODE 1: MONTHLY INDENT (LIST OF PARTS) */}
               {reqMode === 'MONTHLY_INDENT' && (
                 <div className="space-y-4">
@@ -1682,6 +1882,7 @@ export default function InventoryPage() {
                 </button>
               </div>
             </form>
+          )}
           </div>
         </div>
       )}

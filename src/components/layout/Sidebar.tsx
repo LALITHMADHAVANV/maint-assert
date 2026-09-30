@@ -113,8 +113,44 @@ export function Sidebar() {
         badgeColor: 'bg-amber-500 text-slate-900',
       },
     ];
+  } else if (role === 'ADMIN' || role === 'ASSET_MANAGER') {
+    // Admin & Asset Manager: Streamlined without shopfloor tool crib & mechanic maintenance tickets
+    navItems = [
+      {
+        label: 'Asset Registry & QR',
+        href: '/dashboard/machines',
+        icon: Wrench,
+      },
+      {
+        label: 'Floor Workstations',
+        href: '/dashboard/floor-tracker',
+        icon: Layers,
+      },
+      {
+        label: 'Asset Categories',
+        href: '/dashboard/asset-types',
+        icon: ClipboardList,
+      },
+      {
+        label: 'Service History',
+        href: '/dashboard/history',
+        icon: History,
+      },
+      {
+        label: 'CEO Approvals',
+        href: '/dashboard/messages',
+        icon: Crown,
+        badge: pendingCeoCount > 0 ? pendingCeoCount : null,
+        badgeColor: 'bg-rose-600 text-white',
+      },
+      {
+        label: 'User Management',
+        href: '/dashboard/users',
+        icon: UserPlus,
+      },
+    ];
   } else {
-    // Mechanic, Senior Mechanic, Admin, Asset Manager
+    // Mechanic, Senior Mechanic
     navItems = [
       {
         label: 'Asset Registry & QR',
@@ -151,21 +187,6 @@ export function Sidebar() {
         icon: History,
       },
     ];
-
-    if (role === 'ADMIN' || role === 'ASSET_MANAGER') {
-      navItems.push({
-        label: 'CEO Approvals',
-        href: '/dashboard/messages',
-        icon: Crown,
-        badge: pendingCeoCount > 0 ? pendingCeoCount : null,
-        badgeColor: 'bg-rose-600 text-white',
-      });
-      navItems.push({
-        label: 'User Management',
-        href: '/dashboard/users',
-        icon: UserPlus,
-      });
-    }
   }
 
   const getRoleBadgeColor = () => {

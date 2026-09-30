@@ -302,6 +302,20 @@ export default function FloorTrackerPage() {
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [modalInitialCategory, setModalInitialCategory] = useState<AssetCategory>('MACHINE');
 
+  // Inline Category Table State (replacing modal popups for category cards)
+  const [inlineCategoryView, setInlineCategoryView] = useState<AssetCategory | null>(null);
+  const [selectedInlineAsset, setSelectedInlineAsset] = useState<Machine | null>(null);
+
+  const toggleInlineCategory = (cat: AssetCategory) => {
+    if (inlineCategoryView === cat) {
+      setInlineCategoryView(null);
+      setSelectedInlineAsset(null);
+    } else {
+      setInlineCategoryView(cat);
+      setSelectedInlineAsset(null);
+    }
+  };
+
   // Expanded department view state (toggle showing all assets for a department)
   const [expandedDepts, setExpandedDepts] = useState<Record<string, boolean>>({});
 
@@ -447,6 +461,17 @@ export default function FloorTrackerPage() {
     });
     return vals;
   }, [machines]);
+
+  const inlineCategoryAssets = useMemo(() => {
+    if (!inlineCategoryView) return [];
+    if (inlineCategoryView === 'TABLE' || inlineCategoryView === 'FURNITURE') {
+      return machines.filter((m) => m.category === 'TABLE' || m.category === 'CHAIR' || m.category === 'FURNITURE');
+    }
+    if (inlineCategoryView === 'UTILITY') {
+      return machines.filter((m) => m.category === 'UTILITY' || m.category === 'LIGHT' || m.category === 'FAN');
+    }
+    return machines.filter((m) => (m.category || 'MACHINE') === inlineCategoryView);
+  }, [machines, inlineCategoryView]);
 
   // Department counts
   const departmentCounts = useMemo(() => {
@@ -801,9 +826,6 @@ export default function FloorTrackerPage() {
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
             Factory Asset Directory & Infrastructure
           </h1>
-          <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-            Centralized registry, real-time operating metrics, and technical blueprints across all apparel manufacturing departments.
-          </p>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
@@ -939,117 +961,251 @@ export default function FloorTrackerPage() {
           </div>
         </div>
 
-        {/* Right: 4 Category Cards in a Sleek Minimalist Grid */}
-        <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Right: 4 Simplified Category Selector Buttons */}
+        <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
           {/* 1. Machinery */}
-          <div
-            onClick={() => handleOpenAssetModal(undefined, 'MACHINE')}
-            className="bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-xs hover:border-indigo-400 hover:shadow-sm transition cursor-pointer flex flex-col justify-between group"
+          <button
+            type="button"
+            onClick={() => toggleInlineCategory('MACHINE')}
+            className={`p-3.5 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
+              inlineCategoryView === 'MACHINE'
+                ? 'bg-indigo-50 border-indigo-500 ring-2 ring-indigo-500/20 shadow-sm'
+                : 'bg-white border-slate-200/90 hover:border-indigo-300 shadow-xs'
+            }`}
           >
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Machinery</span>
-                <div className="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-105 transition">
-                  <Wrench className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="text-2xl font-black text-slate-900 font-mono mt-1">
-                {categoryCounts.MACHINE || 0}
-              </div>
-              <div className="text-xs font-semibold text-indigo-600 font-mono">
-                ₹{(categoryValuations.MACHINE || 0).toLocaleString('en-IN')}
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800">Machinery</span>
+              <div className="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <Wrench className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-              <span>Sewing & Cutters</span>
-              <span className="text-indigo-600 font-bold group-hover:translate-x-0.5 transition flex items-center">
-                Specs <ChevronRight className="w-3 h-3" />
+            <div className="mt-2 flex items-baseline justify-between">
+              <span className="text-xl font-black font-mono text-slate-900">{categoryCounts.MACHINE || 0}</span>
+              <span className="text-[10px] font-bold text-indigo-600">
+                {inlineCategoryView === 'MACHINE' ? 'Active Table ✕' : 'Click to View'}
               </span>
             </div>
-          </div>
+          </button>
 
           {/* 2. Furniture */}
-          <div
-            onClick={() => handleOpenAssetModal(undefined, 'TABLE')}
-            className="bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-xs hover:border-amber-400 hover:shadow-sm transition cursor-pointer flex flex-col justify-between group"
+          <button
+            type="button"
+            onClick={() => toggleInlineCategory('TABLE')}
+            className={`p-3.5 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
+              inlineCategoryView === 'TABLE' || inlineCategoryView === 'FURNITURE'
+                ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500/20 shadow-sm'
+                : 'bg-white border-slate-200/90 hover:border-amber-300 shadow-xs'
+            }`}
           >
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Furniture</span>
-                <div className="w-7 h-7 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition">
-                  <Armchair className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="text-2xl font-black text-slate-900 font-mono mt-1">
-                {(categoryCounts.TABLE || 0) + (categoryCounts.CHAIR || 0)}
-              </div>
-              <div className="text-xs font-semibold text-amber-600 font-mono">
-                ₹{((categoryValuations.TABLE || 0) + (categoryValuations.CHAIR || 0)).toLocaleString('en-IN')}
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800">Furniture</span>
+              <div className="w-7 h-7 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <Armchair className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-              <span>Work Tables & Seats</span>
-              <span className="text-amber-600 font-bold group-hover:translate-x-0.5 transition flex items-center">
-                Specs <ChevronRight className="w-3 h-3" />
+            <div className="mt-2 flex items-baseline justify-between">
+              <span className="text-xl font-black font-mono text-slate-900">
+                {(categoryCounts.TABLE || 0) + (categoryCounts.CHAIR || 0)}
+              </span>
+              <span className="text-[10px] font-bold text-amber-600">
+                {inlineCategoryView === 'TABLE' ? 'Active Table ✕' : 'Click to View'}
               </span>
             </div>
-          </div>
+          </button>
 
           {/* 3. Vehicles */}
-          <div
-            onClick={() => handleOpenAssetModal(undefined, 'VEHICLE')}
-            className="bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-xs hover:border-stone-400 hover:shadow-sm transition cursor-pointer flex flex-col justify-between group"
+          <button
+            type="button"
+            onClick={() => toggleInlineCategory('VEHICLE')}
+            className={`p-3.5 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
+              inlineCategoryView === 'VEHICLE'
+                ? 'bg-stone-50 border-stone-500 ring-2 ring-stone-500/20 shadow-sm'
+                : 'bg-white border-slate-200/90 hover:border-stone-300 shadow-xs'
+            }`}
           >
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Vehicles</span>
-                <div className="w-7 h-7 rounded-xl bg-stone-50 text-stone-600 flex items-center justify-center group-hover:scale-105 transition">
-                  <Truck className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="text-2xl font-black text-slate-900 font-mono mt-1">
-                {categoryCounts.VEHICLE || 0}
-              </div>
-              <div className="text-xs font-semibold text-stone-600 font-mono">
-                ₹{(categoryValuations.VEHICLE || 0).toLocaleString('en-IN')}
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800">Vehicles</span>
+              <div className="w-7 h-7 rounded-xl bg-stone-50 text-stone-600 flex items-center justify-center">
+                <Truck className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-              <span>Transport</span>
-              <span className="text-stone-600 font-bold group-hover:translate-x-0.5 transition flex items-center">
-                Specs <ChevronRight className="w-3 h-3" />
+            <div className="mt-2 flex items-baseline justify-between">
+              <span className="text-xl font-black font-mono text-slate-900">{categoryCounts.VEHICLE || 0}</span>
+              <span className="text-[10px] font-bold text-stone-600">
+                {inlineCategoryView === 'VEHICLE' ? 'Active Table ✕' : 'Click to View'}
               </span>
             </div>
-          </div>
+          </button>
 
-          {/* 4. Utilities, Lighting & Fans */}
-          <div
-            onClick={() => handleOpenAssetModal(undefined, 'UTILITY')}
-            className="bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-xs hover:border-purple-400 hover:shadow-sm transition cursor-pointer flex flex-col justify-between group"
+          {/* 4. Utilities & Plant */}
+          <button
+            type="button"
+            onClick={() => toggleInlineCategory('UTILITY')}
+            className={`p-3.5 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
+              inlineCategoryView === 'UTILITY'
+                ? 'bg-purple-50 border-purple-500 ring-2 ring-purple-500/20 shadow-sm'
+                : 'bg-white border-slate-200/90 hover:border-purple-300 shadow-xs'
+            }`}
           >
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Utilities & Plant</span>
-                <div className="w-7 h-7 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-105 transition">
-                  <Flame className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="text-2xl font-black text-slate-900 font-mono mt-1">
-                {categoryCounts.UTILITY || 0}
-              </div>
-              <div className="text-xs font-semibold text-purple-600 font-mono">
-                ₹{(categoryValuations.UTILITY || 0).toLocaleString('en-IN')}
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800">Utilities & Plant</span>
+              <div className="w-7 h-7 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                <Flame className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-              <span>Power, Light & Vent</span>
-              <span className="text-purple-600 font-bold group-hover:translate-x-0.5 transition flex items-center">
-                Specs <ChevronRight className="w-3 h-3" />
+            <div className="mt-2 flex items-baseline justify-between">
+              <span className="text-xl font-black font-mono text-slate-900">{categoryCounts.UTILITY || 0}</span>
+              <span className="text-[10px] font-bold text-purple-600">
+                {inlineCategoryView === 'UTILITY' ? 'Active Table ✕' : 'Click to View'}
               </span>
             </div>
-          </div>
+          </button>
         </div>
       </div>
+
+      {/* INLINE CATEGORY DATA TABLE (Directly displays data down below without popup) */}
+      {inlineCategoryView && (
+        <div className="bg-white rounded-2xl border border-indigo-200 shadow-sm p-4 sm:p-5 space-y-4 animate-in fade-in duration-150">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                {inlineCategoryView === 'MACHINE' ? (
+                  <Wrench className="w-4 h-4" />
+                ) : inlineCategoryView === 'TABLE' ? (
+                  <Armchair className="w-4 h-4" />
+                ) : inlineCategoryView === 'VEHICLE' ? (
+                  <Truck className="w-4 h-4" />
+                ) : (
+                  <Flame className="w-4 h-4" />
+                )}
+              </div>
+              <div>
+                <h3 className="font-extrabold text-sm text-slate-900">
+                  {inlineCategoryView === 'MACHINE'
+                    ? 'Machinery Asset Register'
+                    : inlineCategoryView === 'TABLE'
+                    ? 'Workstation Furniture Register'
+                    : inlineCategoryView === 'VEHICLE'
+                    ? 'Plant Vehicles Register'
+                    : 'Utilities & Plant Infrastructure Register'}
+                </h3>
+                <span className="text-xs text-slate-500 font-medium">
+                  {inlineCategoryAssets.length} Registered Units &bull; Click any item to inspect details below
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setInlineCategoryView(null);
+                setSelectedInlineAsset(null);
+              }}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer"
+            >
+              ✕ Close
+            </button>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <table className="w-full text-left text-xs text-slate-700">
+              <thead className="bg-slate-50 font-bold text-slate-600 uppercase text-[10px] border-b border-slate-200">
+                <tr>
+                  <th className="py-2.5 px-3">Asset ID</th>
+                  <th className="py-2.5 px-3">Model / Name</th>
+                  <th className="py-2.5 px-3">Brand</th>
+                  <th className="py-2.5 px-3">Department & Line</th>
+                  <th className="py-2.5 px-3">Station</th>
+                  <th className="py-2.5 px-3">Status</th>
+                  <th className="py-2.5 px-3 text-right">Details</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium">
+                {inlineCategoryAssets.map((asset) => {
+                  const isSelected = selectedInlineAsset?.id === asset.id;
+                  const isDown = asset.status === 'BREAKDOWN';
+                  const isBuffer = asset.status === 'BUFFER';
+
+                  return (
+                    <tr
+                      key={asset.id}
+                      onClick={() => setSelectedInlineAsset(isSelected ? null : asset)}
+                      className={`hover:bg-slate-50 cursor-pointer transition ${
+                        isSelected ? 'bg-indigo-50/60 ring-1 ring-indigo-200' : ''
+                      }`}
+                    >
+                      <td className="py-2.5 px-3 font-mono font-bold text-slate-900">{asset.id}</td>
+                      <td className="py-2.5 px-3 font-semibold text-slate-800">{asset.name || asset.model}</td>
+                      <td className="py-2.5 px-3 text-slate-600">{asset.brand}</td>
+                      <td className="py-2.5 px-3 font-mono text-slate-600">{asset.currentLine}</td>
+                      <td className="py-2.5 px-3 font-mono text-slate-600">{asset.stationNo}</td>
+                      <td className="py-2.5 px-3">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            isDown
+                              ? 'bg-rose-100 text-rose-700'
+                              : isBuffer
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-emerald-100 text-emerald-700'
+                          }`}
+                        >
+                          {asset.status}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 text-right">
+                        <span className="text-xs text-indigo-600 font-bold hover:underline">
+                          {isSelected ? 'Hide ▲' : 'View ▼'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Selected Asset Inline Details Card */}
+          {selectedInlineAsset && (
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-2 animate-in fade-in duration-100">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-xs text-slate-900">
+                  {selectedInlineAsset.id} &mdash; {selectedInlineAsset.name || selectedInlineAsset.model}
+                </span>
+                <span className="font-mono text-xs font-semibold text-slate-600">
+                  ₹{selectedInlineAsset.cost?.toLocaleString('en-IN')}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <div>
+                  <span className="text-slate-500">Brand:</span>{' '}
+                  <span className="font-semibold text-slate-800">{selectedInlineAsset.brand}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500">Department:</span>{' '}
+                  <span className="font-semibold text-slate-800">
+                    {selectedInlineAsset.department || selectedInlineAsset.currentLine}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500">Station:</span>{' '}
+                  <span className="font-semibold text-slate-800">{selectedInlineAsset.stationNo}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500">Motor:</span>{' '}
+                  <span className="font-semibold text-slate-800">
+                    {selectedInlineAsset.motorType || 'N/A'}
+                  </span>
+                </div>
+              </div>
+              {selectedInlineAsset.specs && (
+                <div className="text-[11px] text-slate-600 pt-1 border-t border-slate-200">
+                  <span className="font-bold text-slate-700">Specifications:</span> {selectedInlineAsset.specs}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 3. UNIFIED NEAT & CLEAN FILTER TOOLBAR */}
       <div className="bg-white rounded-2xl border border-slate-200/90 p-3 sm:p-4 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
@@ -1201,8 +1357,6 @@ export default function FloorTrackerPage() {
                         </div>
                       </div>
                     </div>
-
-                    <p className="text-[11px] text-slate-500 pt-1 leading-snug">{dept.shortDesc}</p>
 
                     {/* Staged Assets in Department (Clean row layout without heavy nested boxes) */}
                     <div className="divide-y divide-slate-100 mt-3">

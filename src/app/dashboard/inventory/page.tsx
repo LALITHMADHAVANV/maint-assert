@@ -77,27 +77,8 @@ export default function InventoryPage() {
   const [showFullPartsTable, setShowFullPartsTable] = useState(false);
 
   const visibleMechanics = useMemo(() => {
-    if (role === 'MECHANIC' || role === 'SENIOR_MECHANIC') {
-      const currentUserName = (user?.name || '').toLowerCase();
-      const filtered = FACTORY_MECHANICS_ROSTER.filter((m) => {
-        const mName = m.name.toLowerCase();
-        if (currentUserName && (mName.includes(currentUserName) || currentUserName.includes(mName))) return true;
-        if (role === 'SENIOR_MECHANIC' && mName.includes('ramesh')) return true;
-        if (role === 'MECHANIC' && mName.includes('suresh')) return true;
-        return false;
-      });
-      return filtered.length > 0 ? filtered : [FACTORY_MECHANICS_ROSTER[0]];
-    }
     return FACTORY_MECHANICS_ROSTER;
-  }, [role, user]);
-
-  useEffect(() => {
-    if (role === 'MECHANIC' || role === 'SENIOR_MECHANIC') {
-      if (visibleMechanics[0]) {
-        setActiveMechanicId(visibleMechanics[0].id);
-      }
-    }
-  }, [role, visibleMechanics]);
+  }, []);
 
   const currentMechanicData = useMemo(
     () => visibleMechanics.find((m) => m.id === activeMechanicId) || visibleMechanics[0],
@@ -823,18 +804,19 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          {/* MECHANIC TOOL CUSTODY SECTION */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <Wrench className="w-4 h-4 text-indigo-600" />
-                  <span>Mechanic Tool Custody</span>
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Click any mechanic below to see the tools and spare parts they are currently handling.
-                </p>
-              </div>
+          {/* MECHANIC TOOL CUSTODY SECTION - Hidden from line mechanics; accessible to Senior Mechanic & Store In-Charge */}
+          {role !== 'MECHANIC' && (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <Wrench className="w-4 h-4 text-indigo-600" />
+                    <span>Mechanic Tool Custody</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Click any mechanic below to see the tools and spare parts they are currently handling.
+                  </p>
+                </div>
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
                   {FACTORY_MECHANICS_ROSTER.length} Mechanics On Duty
@@ -1038,10 +1020,31 @@ export default function InventoryPage() {
               </div>
             </div>
           </div>
+        )}
 
-          {/* OPTIONAL TOGGLEABLE FULL CRIB STOCK CATALOG */}
-          {showFullPartsTable && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-4 animate-in fade-in duration-100">
+          {/* CRIB STOCK CATALOG (Always shown for line mechanics who do not have tool custody, or when toggled) */}
+          {(showFullPartsTable || role === 'MECHANIC') && (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4 animate-in fade-in duration-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <Boxes className="w-4 h-4 text-indigo-600" />
+                    <span>Tool Crib &amp; Spare Parts Catalog</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Real-time bin quantities, catalog pricing (₹), and SKU details for monthly indents.
+                  </p>
+                </div>
+                {role !== 'MECHANIC' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowFullPartsTable(false)}
+                    className="text-xs font-semibold px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition cursor-pointer self-start sm:self-auto"
+                  >
+                    Hide Catalog
+                  </button>
+                )}
+              </div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="relative w-full sm:w-72">
                   <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />

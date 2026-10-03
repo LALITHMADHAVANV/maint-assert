@@ -1311,7 +1311,7 @@ export default function InventoryPage() {
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse shrink-0" />
                 <span className="font-bold">Personal Indents Filter:</span>
-                <span>Showing only requisitions and monthly indents raised by {user?.name || (role === 'SENIOR_MECHANIC' ? 'Ramesh Kumar' : 'Suresh Babu')}.</span>
+                <span>Showing only requisitions and monthly indents raised by {user?.name || (role === 'SENIOR_MECHANIC' ? 'Ramesh Kumar' : role === 'MECHANIC' ? 'Suresh Babu' : 'Mechanic')}.</span>
               </div>
               <span className="font-mono font-bold bg-white px-2.5 py-0.5 rounded-lg border border-indigo-200 text-indigo-700 shrink-0 self-start sm:self-auto">
                 {displayedRequisitions.length} Indent{displayedRequisitions.length === 1 ? '' : 's'}

@@ -17,7 +17,7 @@ export const ROLE_PASSWORDS: Record<UserRole, string> = {
 
 interface AuthContextType {
   user: UserProfile | null;
-  role: UserRole;
+  role: UserRole | null;
   supabaseUser: SupabaseUser | null;
   isSupabaseLive: boolean;
   isLoading: boolean;
@@ -264,16 +264,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async (): Promise<void> => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (err) {
+      console.warn('Supabase sign out notice:', err);
+    }
     setUser(null);
     setSupabaseUser(null);
+    if (typeof window !== 'undefined') {
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('sb-') || key.includes('supabase.auth'))) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch {
+        // Ignore local storage error
+      }
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        role: user?.role || 'MECHANIC',
+        role: user?.role || null,
         supabaseUser,
         isSupabaseLive: true,
         isLoading,

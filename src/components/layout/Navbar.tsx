@@ -40,6 +40,13 @@ export function Navbar() {
   const [isScanModalOpen, setIsScanModalOpen] = useState<boolean>(false);
   const [isCameraModalOpen, setIsCameraModalOpen] = useState<boolean>(false);
 
+  const handleSignOut = async () => {
+    await logout();
+    window.location.href = '/';
+  };
+
+  if (!user) return null;
+
   useEffect(() => {
     const unsubParts = subscribeParts((parts) => {
       const low = parts.filter((p) => p.stock <= p.minStock).length;
@@ -311,10 +318,7 @@ export function Navbar() {
                   </div>
                 </div>
                 <button
-                  onClick={async () => {
-                    await logout();
-                    router.push('/');
-                  }}
+                  onClick={handleSignOut}
                   className="ml-1 p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
                   title="Sign Out"
                 >

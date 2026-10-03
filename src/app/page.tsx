@@ -79,9 +79,12 @@ export default function LoginPage() {
         } else if (lower.includes('store') || lower.includes('str') || lower.includes('arumugam')) {
           email = 'stores@textech.garments';
           targetRoute = '/dashboard/store-inbox';
-        } else {
+        } else if (lower.includes('mec-08') || lower.includes('suresh') || lower === 'mechanic') {
           email = 'mechanic@textech.garments';
           targetRoute = '/dashboard/calendar';
+        } else {
+          email = cleanInput;
+          targetRoute = '/dashboard/machines';
         }
       }
 

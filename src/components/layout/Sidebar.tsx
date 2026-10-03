@@ -36,6 +36,11 @@ export function Sidebar() {
   const [pendingCeoCount, setPendingCeoCount] = useState<number>(0);
   const [pendingStoreCount, setPendingStoreCount] = useState<number>(0);
 
+  const handleSignOut = async () => {
+    await logout();
+    window.location.href = '/';
+  };
+
   useEffect(() => {
     const unsubParts = subscribeParts((parts) => {
       const low = parts.filter((p) => p.stock <= p.minStock).length;
@@ -302,10 +307,7 @@ export function Sidebar() {
           </div>
 
           <button
-            onClick={async () => {
-              await logout();
-              router.push('/');
-            }}
+            onClick={handleSignOut}
             className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer shrink-0"
             title="Sign Out"
           >
@@ -315,6 +317,8 @@ export function Sidebar() {
       </div>
     </div>
   );
+
+  if (!user) return null;
 
   return (
     <>
@@ -340,10 +344,7 @@ export function Sidebar() {
             {role}
           </span>
           <button
-            onClick={async () => {
-              await logout();
-              router.push('/');
-            }}
+            onClick={handleSignOut}
             className="p-1.5 text-slate-400 hover:text-rose-400 transition cursor-pointer"
             title="Sign Out"
           >

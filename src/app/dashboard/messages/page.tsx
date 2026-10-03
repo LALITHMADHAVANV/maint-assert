@@ -99,43 +99,48 @@ export default function CeoMessagesPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* Executive Header Banner */}
-      <div className="bg-white text-slate-800 rounded-2xl p-6 sm:p-8 shadow-xs border border-purple-200 relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                <Crown className="w-3.5 h-3.5 text-amber-500" />
-                <span>Executive Office &amp; Chief Executive Decision Desk</span>
-              </span>
-              <span className="text-xs text-purple-700 font-mono font-semibold">
-                {user?.name || 'Dr. K. Ramanathan'} ({role || 'CEO'})
+      {/* Neat & Clean Executive Header Banner */}
+      <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-900 text-white shadow-xs">
+              <Crown className="w-3.5 h-3.5 text-amber-400" />
+              <span>CEO Approval Desk</span>
+            </span>
+            <span className="text-xs font-semibold text-slate-700">
+              {user?.name || 'Dr. K. Ramanathan'}
+            </span>
+            <span className="text-xs text-slate-400 font-medium">
+              • Managing Director
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Critical Spare Parts &amp; Emergency Approvals
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 max-w-2xl">
+            Real-time breakdown dispatches and line-stoppage part requisitions requiring executive financial authorization.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5 shrink-0">
+          <div className="bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-right shadow-2xs">
+            <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+              Pending Actions
+            </div>
+            <div className="flex items-center justify-end gap-1.5 mt-0.5">
+              <span className={`w-2 h-2 rounded-full ${pendingCount > 0 ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`} />
+              <span className={`text-xl font-black font-mono ${pendingCount > 0 ? 'text-rose-600' : 'text-slate-700'}`}>
+                {pendingCount} {pendingCount === 1 ? 'Request' : 'Requests'}
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-              Critical Spare Parts &amp; Emergency Approvals
-            </h1>
-            <p className="text-sm text-slate-500 mt-1 max-w-2xl">
-              Real-time urgent breakdown dispatches and line-stoppage part requests requiring immediate CEO financial authorization.
-            </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="bg-purple-50/80 border border-purple-200 rounded-xl px-4 py-2.5 text-right shadow-2xs">
-              <span className="block text-[11px] uppercase tracking-wider text-purple-800 font-bold">
-                Pending Decisions
-              </span>
-              <div className="flex items-center justify-end gap-2">
-                {pendingCount > 0 && <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />}
-                <span className="text-2xl font-black text-rose-600">{pendingCount}</span>
-              </div>
+          <div className="bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-right shadow-2xs">
+            <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+              Pending CapEx
             </div>
-
-            <div className="bg-purple-50/80 border border-purple-200 rounded-xl px-4 py-2.5 text-right shadow-2xs">
-              <span className="block text-[11px] uppercase tracking-wider text-purple-800 font-bold">
-                Emergency Budget Impact
-              </span>
-              <span className="text-2xl font-black text-amber-700 font-mono">₹{pendingCapex.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+            <div className="text-xl font-black font-mono text-slate-900 mt-0.5">
+              ₹{pendingCapex.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </div>
           </div>
         </div>

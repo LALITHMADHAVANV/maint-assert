@@ -9,7 +9,6 @@ import {
   MessageSquare,
   Crown,
   ShieldAlert,
-  Building,
   IndianRupee,
   FileText,
   CheckCheck,
@@ -113,9 +112,9 @@ export default function CeoMessagesPage() {
       )}
 
       {/* KPI Stats Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold shrink-0">
             <ShieldAlert className="w-6 h-6" />
           </div>
           <div>
@@ -124,8 +123,8 @@ export default function CeoMessagesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shrink-0">
             <CheckCheck className="w-6 h-6" />
           </div>
           <div>
@@ -134,23 +133,13 @@ export default function CeoMessagesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold shrink-0">
             <IndianRupee className="w-6 h-6" />
           </div>
           <div>
             <div className="text-xs text-slate-500 font-medium">Total Emergency CapEx</div>
             <div className="text-xl font-extrabold text-slate-900">₹{totalCapexRequested.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-            <Building className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-xs text-slate-500 font-medium">Protected Lines</div>
-            <div className="text-xl font-extrabold text-indigo-700">Line 01 &amp; 02</div>
           </div>
         </div>
       </div>
@@ -219,7 +208,7 @@ export default function CeoMessagesPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredRequisitions.map((req) => {
               const isPending = req.status === 'PENDING_CEO_APPROVAL';
               const isApproved = req.status === 'APPROVED_BY_CEO';
@@ -228,101 +217,110 @@ export default function CeoMessagesPage() {
               return (
                 <div
                   key={req.id}
-                  className={`bg-white rounded-2xl border p-5 shadow-xs transition-all duration-150 flex flex-col justify-between hover:shadow-md ${
+                  className={`bg-white rounded-3xl border p-6 sm:p-7 shadow-xs hover:shadow-lg transition-all duration-200 flex flex-col justify-between min-h-[460px] ${
                     isPending
-                      ? 'border-rose-300 ring-1 ring-rose-200/50 bg-rose-50/10'
+                      ? 'border-rose-300 ring-2 ring-rose-100 bg-linear-to-b from-rose-50/20 via-white to-white'
                       : isApproved
-                      ? 'border-emerald-200 bg-emerald-50/10'
+                      ? 'border-emerald-300 ring-2 ring-emerald-100 bg-linear-to-b from-emerald-50/20 via-white to-white'
                       : 'border-slate-200'
                   }`}
                 >
-                  <div className="space-y-3.5">
+                  <div className="space-y-4">
                     {/* Top Row: Status badge + ID + Time */}
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {isPending ? (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-600 text-white flex items-center gap-1 shadow-2xs">
-                            <AlertTriangle className="w-3 h-3" />
+                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-600 text-white flex items-center gap-1.5 shadow-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                            <AlertTriangle className="w-3.5 h-3.5" />
                             <span>Emergency</span>
                           </span>
                         ) : (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-600 text-white flex items-center gap-1 shadow-2xs">
-                            <CheckCircle2 className="w-3 h-3" />
+                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white flex items-center gap-1.5 shadow-xs">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
                             <span>Authorized</span>
                           </span>
                         )}
-                        <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                        <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
                           {req.id}
                         </span>
                       </div>
 
-                      <div className="text-[11px] text-slate-400 flex items-center gap-1 shrink-0 font-medium">
-                        <Clock className="w-3 h-3" />
+                      <div className="text-xs text-slate-400 flex items-center gap-1 shrink-0 font-medium">
+                        <Clock className="w-3.5 h-3.5" />
                         <span>{new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                     </div>
 
                     {/* Machine & Line Tag */}
-                    <div className="flex items-center gap-2 flex-wrap text-xs">
-                      <span className="px-2.5 py-0.5 rounded font-mono font-bold bg-slate-900 text-white text-[11px]">
+                    <div className="flex items-center gap-2 flex-wrap text-xs pt-1">
+                      <span className="px-3 py-1 rounded-lg font-mono font-bold bg-slate-900 text-white text-xs">
                         {req.targetMachineId || 'Plant Core'}
                       </span>
-                      <span className="px-2 py-0.5 rounded font-semibold bg-indigo-50 text-indigo-700 text-[11px] border border-indigo-200">
+                      <span className="px-2.5 py-1 rounded-lg font-semibold bg-indigo-50 text-indigo-700 text-xs border border-indigo-200">
                         {req.targetLine}
                       </span>
                       {req.sku && (
-                        <span className="font-mono text-[10px] text-slate-400">
+                        <span className="font-mono text-xs text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-200">
                           SKU: {req.sku}
                         </span>
                       )}
                     </div>
 
                     {/* Part Name & Quantity */}
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2" title={req.partName}>
+                    <div className="pt-1">
+                      <h3 className="text-base sm:text-lg font-extrabold text-slate-900 leading-snug line-clamp-2" title={req.partName}>
                         {req.partName}
                       </h3>
-                      <div className="text-xs text-slate-500 font-medium mt-1">
-                        Quantity Required: <strong className="text-slate-800">{req.quantity} {req.unit}</strong>
+                      <div className="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1.5">
+                        <span>Quantity Required:</span>
+                        <span className="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                          {req.quantity} {req.unit}
+                        </span>
                       </div>
                     </div>
 
                     {/* Estimated CapEx Cost Box */}
-                    <div className="bg-slate-50/90 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                        Estimated CapEx
-                      </span>
-                      <span className="text-base font-black font-mono text-slate-900">
+                    <div className="bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                          Estimated CapEx
+                        </span>
+                        <span className="text-xs text-slate-500 font-medium">
+                          Executive threshold
+                        </span>
+                      </div>
+                      <span className="text-xl sm:text-2xl font-black font-mono text-slate-900">
                         ₹{req.estimatedCost?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
 
                     {/* Technical Justification Drawer with Toggle */}
-                    <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3 text-xs text-amber-950 space-y-1.5">
+                    <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-3.5 text-xs text-amber-950 space-y-2">
                       <div className="flex items-center justify-between gap-1">
-                        <div className="flex items-center gap-1 text-[11px] font-bold text-amber-900">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
                           <FileText className="w-3.5 h-3.5 text-amber-700" />
                           <span>Justification</span>
-                          <span className="font-normal text-[10px] text-amber-700">({req.requestedBy})</span>
+                          <span className="font-normal text-[11px] text-amber-700">({req.requestedBy})</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => toggleInfo(req.id)}
-                          className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 transition cursor-pointer flex items-center gap-0.5"
+                          className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition cursor-pointer flex items-center gap-0.5"
                         >
-                          <Info className="w-3 h-3" />
+                          <Info className="w-3.5 h-3.5" />
                           <span>{isInfoOpen ? 'Less' : 'Details'}</span>
                         </button>
                       </div>
-                      <p className={`text-[11px] text-amber-900/90 leading-relaxed italic ${isInfoOpen ? '' : 'line-clamp-2'}`}>
+                      <p className={`text-xs text-amber-900/90 leading-relaxed italic ${isInfoOpen ? '' : 'line-clamp-2'}`}>
                         &ldquo;{req.justification || 'Emergency repair replacement component needed for halted sewing operation.'}&rdquo;
                       </p>
                     </div>
 
                     {/* Audit Trail if already reviewed */}
                     {req.reviewedBy && (
-                      <div className="text-[11px] text-emerald-800 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5">
-                        <CheckCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <div className="text-xs text-emerald-800 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200 flex items-center gap-2">
+                        <CheckCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                         <span>Authorized by <strong>{req.reviewedBy}</strong></span>
                       </div>
                     )}
@@ -330,19 +328,19 @@ export default function CeoMessagesPage() {
 
                   {/* Action Bar (Grant & Decline buttons for pending requests) */}
                   {isPending && isCeoOrAdmin && (
-                    <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 mt-4">
+                    <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 mt-5">
                       <button
                         onClick={() => handleReject(req.id)}
-                        className="w-full py-2 px-3 text-xs font-semibold text-slate-600 hover:text-rose-700 bg-slate-100 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+                        className="w-full py-2.5 px-4 text-xs font-bold text-slate-700 hover:text-rose-700 bg-slate-100 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
                       >
-                        <XCircle className="w-3.5 h-3.5" />
+                        <XCircle className="w-4 h-4 text-rose-500" />
                         <span>Decline</span>
                       </button>
                       <button
                         onClick={() => handleApprove(req.id)}
-                        className="w-full py-2 px-3 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+                        className="w-full py-2.5 px-4 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <CheckCircle2 className="w-4 h-4" />
                         <span>Grant</span>
                       </button>
                     </div>

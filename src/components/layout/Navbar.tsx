@@ -136,7 +136,7 @@ export function Navbar() {
       },
     ];
   } else if (role === 'SENIOR_MECHANIC') {
-    // 🔧 SENIOR MECHANIC: Monthly cloud calendar (PPM), machine relocation, parts, history, floor grid
+    // 🔧 SENIOR MECHANIC: Monthly cloud calendar (PPM), parts, history, team roster
     navTabs = [
       {
         label: '📅 Monthly Calendar & PPM',
@@ -145,11 +145,6 @@ export function Navbar() {
         badge: pendingTicketsCount > 0 ? pendingTicketsCount : null,
         badgeColor: 'bg-amber-400 text-slate-950 font-extrabold',
         highlight: true,
-      },
-      {
-        label: 'Asset Fleet & Relocation',
-        href: '/dashboard/machines',
-        icon: QrCode,
       },
       {
         label: 'Tool Crib & Indents',
@@ -168,11 +163,6 @@ export function Navbar() {
         href: '/dashboard/mechanic-roster',
         icon: Users,
         highlight: true,
-      },
-      {
-        label: 'Factory Assets',
-        href: '/dashboard/floor-tracker',
-        icon: Layers,
       },
     ];
   } else {
@@ -237,7 +227,7 @@ export function Navbar() {
           <div className="flex items-center justify-between h-16">
             {/* Brand Logo & Name */}
             <Link
-              href={role === 'CEO' ? '/dashboard/messages' : '/dashboard/machines'}
+              href={role === 'CEO' ? '/dashboard/messages' : (role === 'MECHANIC' || role === 'SENIOR_MECHANIC') ? '/dashboard/calendar' : '/dashboard/machines'}
               className="flex items-center space-x-3 group"
             >
               <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-xs text-white font-bold text-lg group-hover:scale-105 transition">
@@ -275,8 +265,8 @@ export function Navbar() {
                 </Link>
               )}
 
-              {/* Floor QR Scanning Actions (Only visible for Mechanics and Plant Admin) */}
-              {isMechanicOrAdmin && (
+              {/* Floor QR Scanning Actions (Only visible for Plant Admin & Asset Manager) */}
+              {(role === 'ADMIN' || role === 'ASSET_MANAGER') && (
                 <>
                   {/* Camera Scanner Trigger */}
                   <button

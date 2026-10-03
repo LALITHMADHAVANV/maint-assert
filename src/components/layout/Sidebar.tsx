@@ -150,23 +150,8 @@ export function Sidebar() {
       },
     ];
   } else {
-    // Mechanic, Senior Mechanic
+    // Mechanic, Senior Mechanic: Focused strictly on tickets, tool crib & indents, and history
     navItems = [
-      {
-        label: 'Asset Registry & QR',
-        href: '/dashboard/machines',
-        icon: Wrench,
-      },
-      {
-        label: 'Floor Workstations',
-        href: '/dashboard/floor-tracker',
-        icon: Layers,
-      },
-      {
-        label: 'Asset Categories',
-        href: '/dashboard/asset-types',
-        icon: ClipboardList,
-      },
       {
         label: 'Maintenance & Tickets',
         href: '/dashboard/calendar',

@@ -43,6 +43,8 @@ import {
   Sparkles,
   ExternalLink,
   Truck,
+  ShieldAlert,
+  CalendarCheck,
 } from 'lucide-react';
 import {
   Machine,
@@ -56,6 +58,7 @@ import { subscribeMachines, createMachine } from '@/lib/services/cmmsService';
 import { ScanModal } from '@/components/scan/ScanModal';
 import { AssetModal } from '@/components/asset/AssetModal';
 import { useToast } from '@/context/ToastContext';
+import { useAuth } from '@/context/AuthContext';
 import {
   MACHINE_CATALOG,
   MachineCategoryGroup,
@@ -291,6 +294,7 @@ export function getCategoryMeta(category?: AssetCategory, asset?: Machine) {
 
 export default function FloorTrackerPage() {
   const { showToast } = useToast();
+  const { role } = useAuth();
   const [machines, setMachines] = useState<Machine[]>([]);
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
   const [targetMoveMachineId, setTargetMoveMachineId] = useState('');
@@ -803,6 +807,43 @@ export default function FloorTrackerPage() {
     setStatusFilter('ALL');
     setSearchQuery('');
   };
+
+  if (role === 'MECHANIC' || role === 'SENIOR_MECHANIC') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl border border-slate-200 shadow-sm max-w-xl mx-auto space-y-5 my-8">
+        <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center shadow-xs">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <div className="space-y-2">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+            Role Access Restriction
+          </span>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+            Floor Workstations Restricted
+          </h2>
+          <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+            Floor layouts, workstation matrix, and departmental infrastructure are managed by <strong>Plant Administrators</strong>. Mechanics attend machine tickets and monthly maintenance routines.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <Link
+            href="/dashboard/calendar"
+            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-xs"
+          >
+            <CalendarCheck className="w-4 h-4" />
+            <span>Go to Mechanic Calendar</span>
+          </Link>
+          <Link
+            href="/dashboard/inventory"
+            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition border border-slate-200 flex items-center gap-2"
+          >
+            <Boxes className="w-4 h-4" />
+            <span>Tool Crib &amp; Indents</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

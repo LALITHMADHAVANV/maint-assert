@@ -76,9 +76,32 @@ export default function InventoryPage() {
   const [activeMechanicId, setActiveMechanicId] = useState<string>(FACTORY_MECHANICS_ROSTER[0].id);
   const [showFullPartsTable, setShowFullPartsTable] = useState(false);
 
+  const visibleMechanics = useMemo(() => {
+    if (role === 'MECHANIC' || role === 'SENIOR_MECHANIC') {
+      const currentUserName = (user?.name || '').toLowerCase();
+      const filtered = FACTORY_MECHANICS_ROSTER.filter((m) => {
+        const mName = m.name.toLowerCase();
+        if (currentUserName && (mName.includes(currentUserName) || currentUserName.includes(mName))) return true;
+        if (role === 'SENIOR_MECHANIC' && mName.includes('ramesh')) return true;
+        if (role === 'MECHANIC' && mName.includes('suresh')) return true;
+        return false;
+      });
+      return filtered.length > 0 ? filtered : [FACTORY_MECHANICS_ROSTER[0]];
+    }
+    return FACTORY_MECHANICS_ROSTER;
+  }, [role, user]);
+
+  useEffect(() => {
+    if (role === 'MECHANIC' || role === 'SENIOR_MECHANIC') {
+      if (visibleMechanics[0]) {
+        setActiveMechanicId(visibleMechanics[0].id);
+      }
+    }
+  }, [role, visibleMechanics]);
+
   const currentMechanicData = useMemo(
-    () => FACTORY_MECHANICS_ROSTER.find((m) => m.id === activeMechanicId) || FACTORY_MECHANICS_ROSTER[0],
-    [activeMechanicId]
+    () => visibleMechanics.find((m) => m.id === activeMechanicId) || visibleMechanics[0],
+    [activeMechanicId, visibleMechanics]
   );
 
   const handleOpenMechanicCustody = (mechIdentifier: string | MechanicDuty) => {
@@ -186,22 +209,43 @@ export default function InventoryPage() {
     [parts]
   );
 
-  // Requisitions stats
+  // User-scoped requisitions: for mechanics, strictly filter to only their own indents & requisitions
+  const displayedRequisitions = useMemo(() => {
+    if (role === 'MECHANIC' || role === 'SENIOR_MECHANIC') {
+      const currentUserName = (user?.name || '').trim().toLowerCase();
+      return requisitions.filter((r) => {
+        const reqName = (r.requestedBy || '').trim().toLowerCase();
+        if (currentUserName) {
+          const userParts = currentUserName.split(' ').filter((p) => p.length > 2);
+          const hasMatch = userParts.some((p) => reqName.includes(p));
+          if (hasMatch || reqName.includes(currentUserName) || currentUserName.includes(reqName)) {
+            return true;
+          }
+        }
+        if (role === 'MECHANIC' && (reqName.includes('suresh') || reqName.includes('mechanic'))) return true;
+        if (role === 'SENIOR_MECHANIC' && (reqName.includes('ramesh') || reqName.includes('senior') || reqName.includes('lead'))) return true;
+        return false;
+      });
+    }
+    return requisitions;
+  }, [requisitions, role, user]);
+
+  // Requisitions stats (scoped to displayed requisitions)
   const pendingCeoApprovals = useMemo(
-    () => requisitions.filter((r) => r.status === 'PENDING_CEO_APPROVAL'),
-    [requisitions]
+    () => displayedRequisitions.filter((r) => r.status === 'PENDING_CEO_APPROVAL'),
+    [displayedRequisitions]
   );
   const pendingManagerApprovals = useMemo(
-    () => requisitions.filter((r) => r.status === 'PENDING_MANAGER_APPROVAL' || r.status === 'PENDING_REVIEW'),
-    [requisitions]
+    () => displayedRequisitions.filter((r) => r.status === 'PENDING_MANAGER_APPROVAL' || r.status === 'PENDING_REVIEW'),
+    [displayedRequisitions]
   );
   const approvedRequisitions = useMemo(
-    () => requisitions.filter((r) => r.status === 'APPROVED_BY_CEO' || r.status === 'APPROVED_BY_MANAGER'),
-    [requisitions]
+    () => displayedRequisitions.filter((r) => r.status === 'APPROVED_BY_CEO' || r.status === 'APPROVED_BY_MANAGER'),
+    [displayedRequisitions]
   );
   const totalReqValue = useMemo(
-    () => requisitions.reduce((acc, r) => acc + (r.estimatedCost || 0), 0),
-    [requisitions]
+    () => displayedRequisitions.reduce((acc, r) => acc + (r.estimatedCost || 0), 0),
+    [displayedRequisitions]
   );
 
   // Filtered parts table
@@ -222,9 +266,9 @@ export default function InventoryPage() {
     });
   }, [parts, lowStockOnly, categoryFilter, searchQuery]);
 
-  // Filtered requisitions list
+  // Filtered requisitions list (scoped to displayed requisitions)
   const filteredRequisitions = useMemo(() => {
-    return requisitions.filter((r) => {
+    return displayedRequisitions.filter((r) => {
       if (reqFilter === 'CRITICAL') return r.type === 'CRITICAL_CEO';
       if (reqFilter === 'URGENT') return r.type === 'URGENT_NEED';
       if (reqFilter === 'MONTHLY') return r.type === 'MONTHLY_INDENT';
@@ -238,7 +282,7 @@ export default function InventoryPage() {
         return r.status === 'APPROVED_BY_CEO' || r.status === 'APPROVED_BY_MANAGER';
       return true;
     });
-  }, [requisitions, reqFilter]);
+  }, [displayedRequisitions, reqFilter]);
 
   const handleAdjust = async (part: SparePart, delta: number) => {
     if (part.stock + delta < 0) {
@@ -807,7 +851,7 @@ export default function InventoryPage() {
 
             {/* Mechanic Selector Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-              {FACTORY_MECHANICS_ROSTER.map((mech) => {
+              {visibleMechanics.map((mech) => {
                 const isSelected = mech.id === activeMechanicId;
                 const specialToolsCount = mech.checkedOutTools?.length || 0;
                 const drawnSparesCount = mech.activePartsDrawn?.reduce((acc, p) => acc + p.quantity, 0) || 0;
@@ -1259,6 +1303,19 @@ export default function InventoryPage() {
           </div>
 
           {/* Filter Bar with separated Critical, Urgent, and Monthly List */}
+          {(role === 'MECHANIC' || role === 'SENIOR_MECHANIC') && (
+            <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-indigo-900">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse shrink-0" />
+                <span className="font-bold">Personal Indents Filter:</span>
+                <span>Showing only requisitions and monthly indents raised by {user?.name || (role === 'SENIOR_MECHANIC' ? 'Ramesh Kumar' : 'Suresh Babu')}.</span>
+              </div>
+              <span className="font-mono font-bold bg-white px-2.5 py-0.5 rounded-lg border border-indigo-200 text-indigo-700 shrink-0 self-start sm:self-auto">
+                {displayedRequisitions.length} Indent{displayedRequisitions.length === 1 ? '' : 's'}
+              </span>
+            </div>
+          )}
+
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2 flex-wrap">
               <button
@@ -1269,7 +1326,7 @@ export default function InventoryPage() {
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
-                All Requests ({requisitions.length})
+                {role === 'MECHANIC' || role === 'SENIOR_MECHANIC' ? 'My Indents' : 'All Requests'} ({displayedRequisitions.length})
               </button>
 
               {/* Critical (CEO) */}
